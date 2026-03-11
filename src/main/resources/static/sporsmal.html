@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>Still spørsmål</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 14px;
+            font-size: 16px;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Still spørsmål til KI</h1>
+
+<p><strong>Valt emne:</strong> <span id="subjectText"></span></p>
+<p><strong>Valt tema:</strong> <span id="topicText"></span></p>
+
+<textarea id="question" placeholder="Skriv spørsmålet ditt her..."></textarea><br>
+<button onclick="sendQuestion()">Send spørsmål</button>
+
+<div class="box">
+    <h2>Forklaring</h2>
+    <p id="explanation">Ingen respons enno.</p>
+</div>
+
+<div class="box">
+    <h2>Oppfølgingsspørsmål</h2>
+    <p id="followUp">Ingen respons enno.</p>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const subject = params.get("subject") || "";
+    const topic = params.get("topic") || "";
+
+    document.getElementById("subjectText").textContent = subject;
+    document.getElementById("topicText").textContent = topic;
+
+    async function sendQuestion() {
+        const question = document.getElementById("question").value;
+
+        try {
+            const response = await fetch("/api/ai/ask", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    subject: subject,
+                    topic: topic,
+                    question: question
+                })
+            });
+
+            const data = await response.json();
+
+            document.getElementById("explanation").textContent =
+                data.explanation || "Ingen forklaring mottatt.";
+
+            document.getElementById("followUp").textContent =
+                data.follow_up_question || "Ingen oppfølgingsspørsmål mottatt.";
+        } catch (error) {
+            document.getElementById("explanation").textContent = "Feil ved kall til backend.";
+            document.getElementById("followUp").textContent = "";
+            console.error(error);
+        }
+    }
+</script>
+
+</body>
+</html>

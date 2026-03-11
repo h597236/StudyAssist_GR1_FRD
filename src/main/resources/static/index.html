@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>Vel emne og tema</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        input, select, button {
+            margin: 6px 0;
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>StudyAssist</h1>
+
+<div class="box">
+    <h2>Opprett emne</h2>
+    <input type="text" id="newSubject" placeholder="Skriv emnenamn">
+    <button onclick="addSubject()">Legg til emne</button>
+</div>
+
+<div class="box">
+    <h2>Opprett tema</h2>
+    <label for="subjectSelect">Vel emne:</label><br>
+    <select id="subjectSelect"></select><br>
+    <input type="text" id="newTopic" placeholder="Skriv temanamn">
+    <button onclick="addTopic()">Legg til tema</button>
+</div>
+
+<div class="box">
+    <h2>Vel emne og tema</h2>
+    <label for="goSubjectSelect">Emne:</label><br>
+    <select id="goSubjectSelect" onchange="updateTopicDropdown()"></select><br>
+
+    <label for="goTopicSelect">Tema:</label><br>
+    <select id="goTopicSelect"></select><br><br>
+
+    <button onclick="goToQuestionPage()">Gå til spørjesida</button>
+</div>
+
+<script>
+    let subjects = JSON.parse(localStorage.getItem("subjects")) || [];
+
+    function saveSubjects() {
+        localStorage.setItem("subjects", JSON.stringify(subjects));
+    }
+
+    function renderSubjects() {
+        const subjectSelect = document.getElementById("subjectSelect");
+        const goSubjectSelect = document.getElementById("goSubjectSelect");
+
+        subjectSelect.innerHTML = "";
+        goSubjectSelect.innerHTML = "";
+
+        subjects.forEach((subject, index) => {
+            const option1 = document.createElement("option");
+            option1.value = index;
+            option1.textContent = subject.name;
+            subjectSelect.appendChild(option1);
+
+            const option2 = document.createElement("option");
+            option2.value = index;
+            option2.textContent = subject.name;
+            goSubjectSelect.appendChild(option2);
+        });
+
+        updateTopicDropdown();
+    }
+
+    function updateTopicDropdown() {
+        const goSubjectSelect = document.getElementById("goSubjectSelect");
+        const goTopicSelect = document.getElementById("goTopicSelect");
+        const selectedIndex = goSubjectSelect.value;
+
+        goTopicSelect.innerHTML = "";
+
+        if (subjects[selectedIndex] && subjects[selectedIndex].topics) {
+            subjects[selectedIndex].topics.forEach(topic => {
+                const option = document.createElement("option");
+                option.value = topic;
+                option.textContent = topic;
+                goTopicSelect.appendChild(option);
+            });
+        }
+    }
+
+    function addSubject() {
+        const input = document.getElementById("newSubject");
+        const name = input.value.trim();
+
+        if (!name) return;
+
+        subjects.push({
+            name: name,
+            topics: []
+        });
+
+        saveSubjects();
+        renderSubjects();
+        input.value = "";
+    }
+
+    function addTopic() {
+        const subjectIndex = document.getElementById("subjectSelect").value;
+        const topicInput = document.getElementById("newTopic");
+        const topicName = topicInput.value.trim();
+
+        if (!topicName || subjects.length === 0) return;
+
+        subjects[subjectIndex].topics.push(topicName);
+
+        saveSubjects();
+        renderSubjects();
+        topicInput.value = "";
+    }
+
+    function goToQuestionPage() {
+        const subjectIndex = document.getElementById("goSubjectSelect").value;
+        const topic = document.getElementById("goTopicSelect").value;
+
+        if (!subjects[subjectIndex] || !topic) return;
+
+        const subject = subjects[subjectIndex].name;
+
+        window.location.href =
+            "/sporsmal.html?subject=" + encodeURIComponent(subject) +
+            "&topic=" + encodeURIComponent(topic);
+    }
+
+    renderSubjects();
+</script>
+
+</body>
+</html>
