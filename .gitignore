@@ -34,4 +34,3 @@ build/
 
 ### Extra ###
 .env
-application-local.properties

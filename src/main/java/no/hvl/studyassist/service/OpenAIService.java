@@ -5,16 +5,21 @@ import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.models.responses.Response;
 import com.openai.models.responses.ResponseCreateParams;
+import com.openai.models.responses.ResponseOutputItem;
+import com.openai.models.responses.ResponseOutputMessage;
 import no.hvl.studyassist.model.AIRequest;
 import no.hvl.studyassist.model.AIResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class OpenAIService {
 
+    @Value("${openai.api.key}")
+    private String apiKey;
+
     public AIResponse askAI(AIRequest request) {
         try {
-            String apiKey = System.getenv("OPENAI_API_KEY");
 
             OpenAIClient client = OpenAIOkHttpClient.builder()
                     .apiKey(apiKey)
@@ -52,13 +57,13 @@ public class OpenAIService {
             Response response = client.responses().create(params);
 
             String text = response.output().stream()
-                    .filter(item -> item.isMessage())
+                    .filter(ResponseOutputItem::isMessage)
                     .flatMap(item -> item.asMessage().content().stream())
-                    .filter(content -> content.isOutputText())
+                    .filter(ResponseOutputMessage.Content::isOutputText)
                     .map(content -> content.asOutputText().text())
                     .collect(java.util.stream.Collectors.joining());
 
-            if (text == null || text.isBlank()) {
+            if (text.isBlank()) {
                 throw new RuntimeException("Fant ikkje tekst i OpenAI-responsen");
             }
 

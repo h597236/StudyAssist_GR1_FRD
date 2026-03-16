@@ -10,4 +10,9 @@ public class PageController {
     public String sporsmal() {
         return "redirect:/sporsmal.html";
     }
+
+    @GetMapping("/login")
+    public String login() {
+        return "redirect:/login.html";
+    }
 }
