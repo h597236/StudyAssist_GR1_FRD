@@ -15,7 +15,7 @@
     </a>
     <ul class="navbar-links">
         <li><a href="sporsmal.html">Still spørsmål</a></li>
-        <li><a href="#">Historikk</a></li>
+        <li><a href="historikk.html">Historikk</a></li>
     </ul>
     <div class="navbar-user">
         <span id="navBrukarnavn">bruker@email.com</span>
@@ -158,6 +158,7 @@
             card.innerHTML =
                 '<div class="emne-card-top">' +
                     '<div class="emne-icon"></div>' +
+                    '<button class="emne-delete-btn" title="Slett emne">✕</button>' +
                 '</div>' +
                 '<div class="emne-card-body">' +
                     '<h3>' + subject.name + '</h3>' +
@@ -165,6 +166,11 @@
                     '<div class="emne-progress">' + progressHTML + '</div>' +
                 '</div>';
             grid.appendChild(card);
+
+            card.querySelector(".emne-delete-btn").addEventListener("click", function(e) {
+                e.stopPropagation();
+                deleteSubject(index);
+            });
         });
 
         updateStats();
@@ -190,6 +196,16 @@
         closeNewEmneModal();
         nameInput.value = "";
         descInput.value = "";
+    }
+
+    // ── Delete Subject ──
+    function deleteSubject(index) {
+        var name = subjects[index].name;
+        if (confirm('Er du sikker på at du vil slette "' + name + '"?')) {
+            subjects.splice(index, 1);
+            saveSubjects();
+            renderEmneCards();
+        }
     }
 
     // ── Modals ──

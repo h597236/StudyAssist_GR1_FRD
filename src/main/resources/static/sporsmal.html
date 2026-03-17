@@ -9,16 +9,18 @@
 <body>
 
 <div class="sp-layout">
+    <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <!-- Sidebar -->
     <aside class="sp-sidebar">
-        <div class="sp-sidebar-top">
-            <!-- Logo -->
+
+        <!-- FIXED: Logo + Kom i gang (does not scroll) -->
+        <div class="sp-sidebar-fixed">
             <a href="index.html" class="navbar-brand" style="color: var(--text-primary);">
                 <img src="logo1.png" alt="Logo" class="navbar-logo_sporsmal">
             </a>
 
-            <!-- Kom i gang -->
             <div class="sp-sidebar-section">
                 <div class="sp-sidebar-label">Kom i gang</div>
                 <a href="sporsmal.html?subject=Generelt&topic=Fritt%20spørsmål" class="sp-sidebar-link">
@@ -27,12 +29,14 @@
                 <a href="#" class="sp-sidebar-link" onclick="openNyChatModal(); return false;">
                     Ny chat
                 </a>
-                <a href="#" class="sp-sidebar-link">
+                <a href="historikk.html" class="sp-sidebar-link">
                     <span class="sp-sidebar-icon">🔍</span> Søk i chat
                 </a>
             </div>
+        </div>
 
-            <!-- Mine emner -->
+        <!-- SCROLLABLE: Mine emner (only this part scrolls) -->
+        <div class="sp-sidebar-scroll">
             <div class="sp-sidebar-section">
                 <div class="sp-sidebar-label">Mine emner</div>
                 <a href="#" class="sp-sidebar-link" onclick="openNyttEmneModal(); return false;">
@@ -42,12 +46,13 @@
             </div>
         </div>
 
-        <!-- User footer -->
+        <!-- FIXED: User footer (does not scroll) -->
         <div class="sp-sidebar-footer">
             <div class="sp-sidebar-avatar"></div>
             <span id="sidebarBrukarnavn">bruker@email.com</span>
             <button class="sp-sidebar-logout" onclick="loggUt()" title="Logg ut">→</button>
         </div>
+
     </aside>
 
     <!-- Main area -->
@@ -81,6 +86,8 @@
     </main>
 
 </div>
+
+
 
 <!-- Modal: Nytt emne -->
 <div class="modal-overlay" id="nyttEmneModal">
@@ -152,7 +159,6 @@
             header.appendChild(arrow);
             item.appendChild(header);
 
-            // Topics (collapsed by default)
             var topics = document.createElement("div");
             topics.className = "sp-emne-topics";
             topics.id = "topics-" + index;
@@ -206,7 +212,6 @@
         emneSelect.value = emneIndex;
         updateTemaSelect();
 
-        // Set the tema value
         for (var i = 0; i < temaSelect.options.length; i++) {
             if (temaSelect.options[i].value === tema) {
                 temaSelect.value = tema;
@@ -227,7 +232,6 @@
             emneSelect.appendChild(opt);
         });
 
-        // Check URL params
         var params = new URLSearchParams(window.location.search);
         var urlSubject = params.get("subject");
         var urlTopic = params.get("topic");
@@ -274,12 +278,10 @@
         var subject = emneIdx !== "" ? subjects[emneIdx].name : "Generelt";
         var topic = tema || "Fritt spørsmål";
 
-        // Add user message bubble
         addMessage("user", question);
         document.getElementById("question").value = "";
         autoResizeTextarea();
 
-        // Add loading bubble
         var loadingId = addMessage("ai", "Tenkjer...");
 
         try {
@@ -303,7 +305,6 @@
                 aiText += "\n\n💡 " + data.follow_up_question;
             }
 
-            // Replace loading with actual response
             updateMessage(loadingId, aiText || "Ingen forklaring mottatt.");
 
             var count = parseInt(localStorage.getItem("sporsmalCount")) || 0;
@@ -381,11 +382,12 @@
     }
 
     function openNyChatModal() {
-        // Reset dropdowns and go blank
         document.getElementById("emneSelect").value = "";
         updateTemaSelect();
         document.getElementById("question").value = "";
-        document.getElementById("responseArea").style.display = "none";
+        // Clear chat
+        var messages = document.getElementById("chatMessages");
+        messages.innerHTML = '<div class="chat-welcome"><p class="sp-hint">Velg emne og tema og still spørsmålet ditt for å komme i gang</p></div>';
     }
 
     function addEmne() {
@@ -412,7 +414,6 @@
         renderDropdowns();
         closeNyttTemaModal();
 
-        // Open the emne in sidebar
         var topics = document.getElementById("topics-" + activeEmneIndex);
         if (topics) topics.classList.add("open");
         var arrow = document.getElementById("arrow-" + activeEmneIndex);
@@ -424,7 +425,11 @@
         window.location.href = "/login.html";
     }
 
-    // Close modals on overlay click
+    function toggleSidebar() {
+        document.querySelector(".sp-sidebar").classList.toggle("open");
+        document.querySelector(".sidebar-overlay").classList.toggle("open");
+    }
+
     document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
         overlay.addEventListener("click", function(e) {
             if (e.target === overlay) overlay.classList.remove("active");

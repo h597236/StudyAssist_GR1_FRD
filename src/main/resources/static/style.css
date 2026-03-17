@@ -78,9 +78,10 @@ body {
 }
 
 .navbar-logo_sporsmal {
-  width: 160px;
-  height: 160px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
+  margin: -50px 0;
 }
 
 .navbar-links {
@@ -601,22 +602,30 @@ body {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
-  overflow-y: auto;
+  overflow: hidden;
   z-index: 50;
 }
 
-.sp-sidebar-top {
-  padding: 24px 20px;
+/* Sidebar: fixed top section (logo + kom i gang) */
+.sp-sidebar-fixed {
+  padding: 24px 20px 0;
+  flex-shrink: 0;
 }
 
-.sp-sidebar-top .navbar-brand {
+.sp-sidebar-fixed .navbar-brand {
   margin-bottom: 28px;
   color: var(--text-primary);
+}
+
+/* Sidebar: scrollable section (mine emner) */
+.sp-sidebar-scroll {
+  padding: 0 20px 20px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .sp-sidebar-section {
@@ -722,6 +731,7 @@ body {
   font-size: 0.8rem;
 }
 
+/* Sidebar: fixed footer (user info) */
 .sp-sidebar-footer {
   padding: 16px 20px;
   border-top: 1px solid var(--border);
@@ -730,6 +740,7 @@ body {
   gap: 10px;
   font-size: 0.84rem;
   color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .sp-sidebar-avatar {
@@ -761,6 +772,7 @@ body {
   color: var(--text-primary);
 }
 
+/* ── Main chat area ── */
 .sp-main {
   flex: 1;
   margin-left: 260px;
@@ -919,6 +931,224 @@ body {
   margin-top: 32px;
 }
 
+/* ── Historikk Page ── */
+.hist-content {
+  padding: 40px 40px 60px;
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.hist-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.hist-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  transition: border-color 0.2s;
+}
+
+.hist-search-bar:focus-within {
+  border-color: var(--accent);
+}
+
+.hist-search-icon {
+  font-size: 0.9rem;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.hist-search-bar input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 0.92rem;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.hist-search-bar input::placeholder {
+  color: var(--text-muted);
+}
+
+.hist-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.hist-chip {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.hist-chip:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.hist-chip.active {
+  background: var(--bg-nav);
+  color: var(--text-on-dark);
+  border-color: var(--bg-nav);
+}
+
+.hist-results {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hist-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.hist-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.hist-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.hist-card-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.hist-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+}
+
+.hist-tag-tema {
+  background: var(--bg);
+  color: var(--text-secondary);
+}
+
+.hist-card-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.emne-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.15);
+  color: #fff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.emne-card:hover .emne-delete-btn {
+  opacity: 1;
+}
+
+.emne-delete-btn:hover {
+  background: rgba(200,50,50,0.7);
+}
+
+
+.hist-card-question {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.hist-card-answer {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hist-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.hist-empty p {
+  font-size: 0.92rem;
+}
+
+  /* ── Hamburger & mobile sidebar ── */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 60;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  font-size: 1.2rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 40;
+}
+
 /* ── Responsive ── */
 @media (max-width: 700px) {
   .navbar {
@@ -970,23 +1200,31 @@ body {
   .sp-selects {
     flex-direction: column;
   }
-}
 
-@media (max-width: 500px) {
-  .sp-layout {
-    flex-direction: column;
+  .hamburger-btn {
+    display: flex;
   }
 
   .sp-sidebar {
-    position: relative;
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    max-height: none;
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .sp-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay.open {
+    display: block;
   }
 
   .sp-main {
     margin-left: 0;
-    height: calc(100vh - 200px);
   }
+
 }
+
+
+
+
