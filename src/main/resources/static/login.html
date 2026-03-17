@@ -2,106 +2,80 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Logg inn</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 80px auto;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-        button.secondary {
-            background-color: #2196F3;
-        }
-        .box {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 24px;
-            margin-top: 20px;
-        }
-        #melding {
-            color: red;
-            margin-top: 10px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logg inn – StudyAssist</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>StudyAssist</h1>
+<div class="login-wrapper">
+    <div class="login-card">
+        <img src="logo_login.png" alt="Logo" class="navbar-logo">
 
-<div class="box">
-    <h2>Logg inn / Registrer</h2>
+        <p class="subtitle">Logg inn for å starte læringsøkta</p>
 
-    <input type="text" id="brukarnavn" placeholder="Brukarnamn">
-    <input type="password" id="passord" placeholder="Passord">
+        <input type="text" id="brukarnavn" placeholder="Brukarnamn">
+        <input type="password" id="passord" placeholder="Passord">
 
-    <button onclick="loggInn()">Logg inn</button>
-    <button class="secondary" onclick="registrer()">Registrer ny brukar</button>
+        <button class="btn btn-primary" onclick="loggInn()">Logg inn</button>
+        <button class="btn btn-secondary" onclick="registrer()">Registrer ny brukar</button>
 
-    <p id="melding"></p>
+        <p id="melding"></p>
+    </div>
 </div>
 
 <script>
     async function loggInn() {
-        const brukarnavn = document.getElementById("brukarnavn").value.trim();
-        const passord = document.getElementById("passord").value;
+        var brukarnavn = document.getElementById("brukarnavn").value.trim();
+        var passord = document.getElementById("passord").value;
 
         if (!brukarnavn || !passord) {
-            document.getElementById("melding").textContent = "Fyll inn brukarnamn og passord.";
+            showMelding("Fyll inn brukarnamn og passord.", "red");
             return;
         }
 
-        const response = await fetch("/api/brukar/logginn", {
+        var response = await fetch("/api/brukar/logginn", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brukarnavn, passord })
+            body: JSON.stringify({ brukarnavn: brukarnavn, passord: passord })
         });
 
         if (response.ok) {
-            const navn = await response.text();
-            localStorage.setItem("brukarnavn", navn);
+            var namn = await response.text();
+            localStorage.setItem("brukarnavn", namn);
             window.location.href = "/index.html";
         } else {
-            document.getElementById("melding").textContent = "Feil brukarnamn eller passord.";
+            showMelding("Feil brukarnamn eller passord.", "red");
         }
     }
 
     async function registrer() {
-        const brukarnavn = document.getElementById("brukarnavn").value.trim();
-        const passord = document.getElementById("passord").value;
+        var brukarnavn = document.getElementById("brukarnavn").value.trim();
+        var passord = document.getElementById("passord").value;
 
         if (!brukarnavn || !passord) {
-            document.getElementById("melding").textContent = "Fyll inn brukarnamn og passord.";
+            showMelding("Fyll inn brukarnamn og passord.", "red");
             return;
         }
 
-        const response = await fetch("/api/brukar/registrer", {
+        var response = await fetch("/api/brukar/registrer", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brukarnavn, passord })
+            body: JSON.stringify({ brukarnavn: brukarnavn, passord: passord })
         });
 
-        const melding = await response.text();
+        var melding = await response.text();
         if (response.ok) {
-            document.getElementById("melding").style.color = "green";
-            document.getElementById("melding").textContent = "Brukar oppretta! Logg inn no.";
+            showMelding("Brukar oppretta! Logg inn no.", "green");
         } else {
-            document.getElementById("melding").style.color = "red";
-            document.getElementById("melding").textContent = melding;
+            showMelding(melding, "red");
         }
+    }
+
+    function showMelding(text, color) {
+        var el = document.getElementById("melding");
+        el.textContent = text;
+        el.style.color = color;
     }
 </script>
 

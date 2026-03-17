@@ -2,151 +2,279 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Vel emne og tema</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-        }
-
-        input, select, button {
-            margin: 6px 0;
-            padding: 8px;
-            font-size: 16px;
-        }
-
-        ul {
-            padding-left: 20px;
-        }
-
-        .box {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 20px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyAssist</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>StudyAssist</h1>
+<!-- Navbar -->
+<nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+        <img src="logo1.png" alt="Logo" class="navbar-logo">
+    </a>
+    <ul class="navbar-links">
+        <li><a href="sporsmal.html">Still spørsmål</a></li>
+        <li><a href="#">Historikk</a></li>
+    </ul>
+    <div class="navbar-user">
+        <span id="navBrukarnavn">bruker@email.com</span>
+        <button class="btn-logout" onclick="loggUt()">Logg ut</button>
+    </div>
+</nav>
 
-<div class="box">
-    <h2>Opprett emne</h2>
-    <input type="text" id="newSubject" placeholder="Skriv emnenamn">
-    <button onclick="addSubject()">Legg til emne</button>
+<!-- Main Content -->
+<div class="main-content">
+
+    <!-- Welcome -->
+    <div class="welcome">
+        <img src="maskott.png" alt="StudyAssist maskot" class="welcome-avatar">
+        <h1>Er du klar for ei læringsøkt med meg?</h1>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon emne">📚</div>
+            <div>
+                <span class="stat-number" id="statEmne">0</span>
+                <div class="stat-label">Emne</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon tema">📝</div>
+            <div>
+                <span class="stat-number" id="statTema">0</span>
+                <div class="stat-label">Tema</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon sporsmal">💬</div>
+            <div>
+                <span class="stat-number" id="statSporsmal">0</span>
+                <div class="stat-label">Spørsmål stilt</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mine emne section -->
+    <div class="section-panel">
+        <div class="section-header">
+            <h2>Mine emne</h2>
+            <div class="section-actions">
+                <button class="btn btn-secondary" onclick="goToTempChat()">Midlertidig chat</button>
+                <button class="btn btn-primary" onclick="openNewEmneModal()">Nytt emne</button>
+            </div>
+        </div>
+
+        <div class="emne-grid" id="emneGrid"></div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <p>Du har ikkje lagt til nokre emne enno. Klikk «Nytt emne» for å komme i gang!</p>
+        </div>
+    </div>
+
 </div>
 
-<div class="box">
-    <h2>Opprett tema</h2>
-    <label for="subjectSelect">Vel emne:</label><br>
-    <select id="subjectSelect"></select><br>
-    <input type="text" id="newTopic" placeholder="Skriv temanamn">
-    <button onclick="addTopic()">Legg til tema</button>
+<!-- Modal: Nytt emne -->
+<div class="modal-overlay" id="newEmneModal">
+    <div class="modal">
+        <h3>Opprett nytt emne</h3>
+        <label for="modalEmneName">Emnenamn (t.d. DAT109)</label>
+        <input type="text" id="modalEmneName" placeholder="DAT109">
+        <label for="modalEmneDesc">Skildring</label>
+        <input type="text" id="modalEmneDesc" placeholder="Prosjekt- og applikasjonsutvikling">
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeNewEmneModal()">Avbryt</button>
+            <button class="btn btn-primary" onclick="addSubject()">Legg til</button>
+        </div>
+    </div>
 </div>
 
-<div class="box">
-    <h2>Vel emne og tema</h2>
-    <label for="goSubjectSelect">Emne:</label><br>
-    <select id="goSubjectSelect" onchange="updateTopicDropdown()"></select><br>
-
-    <label for="goTopicSelect">Tema:</label><br>
-    <select id="goTopicSelect"></select><br><br>
-
-    <button onclick="goToQuestionPage()">Gå til spørjesida</button>
+<!-- Modal: Vel tema for emne -->
+<div class="modal-overlay" id="temaModal">
+    <div class="modal">
+        <h3 id="temaModalTitle">Vel tema</h3>
+        <label for="temaSelect">Tema:</label>
+        <select id="temaSelect"></select>
+        <label for="newTemaInput">Eller legg til nytt tema:</label>
+        <input type="text" id="newTemaInput" placeholder="Skriv temanamn">
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeTemaModal()">Avbryt</button>
+            <button class="btn btn-secondary" onclick="addTemaFromModal()">Legg til tema</button>
+            <button class="btn btn-primary" onclick="goToQuestionPage()">Gå vidare</button>
+        </div>
+    </div>
 </div>
 
 <script>
+    // ── Data ──
     let subjects = JSON.parse(localStorage.getItem("subjects")) || [];
+    let sporsmalCount = parseInt(localStorage.getItem("sporsmalCount")) || 0;
+    let selectedSubjectIndex = null;
 
     function saveSubjects() {
         localStorage.setItem("subjects", JSON.stringify(subjects));
     }
 
-    function renderSubjects() {
-        const subjectSelect = document.getElementById("subjectSelect");
-        const goSubjectSelect = document.getElementById("goSubjectSelect");
+    // ── Display username ──
+    const brukarnavn = localStorage.getItem("brukarnavn") || "bruker";
+    document.getElementById("navBrukarnavn").textContent = brukarnavn;
 
-        subjectSelect.innerHTML = "";
-        goSubjectSelect.innerHTML = "";
+    // ── Stats ──
+    function updateStats() {
+        const totalEmne = subjects.length;
+        const totalTema = subjects.reduce((sum, s) => sum + (s.topics ? s.topics.length : 0), 0);
+        document.getElementById("statEmne").textContent = totalEmne;
+        document.getElementById("statTema").textContent = totalTema;
+        document.getElementById("statSporsmal").textContent = sporsmalCount;
+    }
+
+    // ── Render Emne Cards ──
+    function renderEmneCards() {
+        const grid = document.getElementById("emneGrid");
+        const empty = document.getElementById("emptyState");
+        grid.innerHTML = "";
+
+        if (subjects.length === 0) {
+            empty.style.display = "block";
+            return;
+        }
+
+        empty.style.display = "none";
 
         subjects.forEach((subject, index) => {
-            const option1 = document.createElement("option");
-            option1.value = index;
-            option1.textContent = subject.name;
-            subjectSelect.appendChild(option1);
+            const topicCount = subject.topics ? subject.topics.length : 0;
+            const filledBars = Math.min(topicCount, 6);
 
-            const option2 = document.createElement("option");
-            option2.value = index;
-            option2.textContent = subject.name;
-            goSubjectSelect.appendChild(option2);
+            let progressHTML = '';
+            for (let i = 0; i < 6; i++) {
+                progressHTML += '<span class="' + (i < filledBars ? 'filled' : '') + '"></span>';
+            }
+
+            const card = document.createElement("div");
+            card.className = "emne-card";
+            card.onclick = function() { openTemaModal(index); };
+            card.innerHTML =
+                '<div class="emne-card-top">' +
+                    '<div class="emne-icon"></div>' +
+                '</div>' +
+                '<div class="emne-card-body">' +
+                    '<h3>' + subject.name + '</h3>' +
+                    '<p>' + (subject.description || 'Ingen skildring.') + '</p>' +
+                    '<div class="emne-progress">' + progressHTML + '</div>' +
+                '</div>';
+            grid.appendChild(card);
         });
 
-        updateTopicDropdown();
+        updateStats();
     }
 
-    function updateTopicDropdown() {
-        const goSubjectSelect = document.getElementById("goSubjectSelect");
-        const goTopicSelect = document.getElementById("goTopicSelect");
-        const selectedIndex = goSubjectSelect.value;
-
-        goTopicSelect.innerHTML = "";
-
-        if (subjects[selectedIndex] && subjects[selectedIndex].topics) {
-            subjects[selectedIndex].topics.forEach(topic => {
-                const option = document.createElement("option");
-                option.value = topic;
-                option.textContent = topic;
-                goTopicSelect.appendChild(option);
-            });
-        }
-    }
-
+    // ── Add Subject ──
     function addSubject() {
-        const input = document.getElementById("newSubject");
-        const name = input.value.trim();
+        const nameInput = document.getElementById("modalEmneName");
+        const descInput = document.getElementById("modalEmneDesc");
+        const name = nameInput.value.trim();
+        const desc = descInput.value.trim();
 
         if (!name) return;
 
         subjects.push({
             name: name,
+            description: desc,
             topics: []
         });
 
         saveSubjects();
-        renderSubjects();
+        renderEmneCards();
+        closeNewEmneModal();
+        nameInput.value = "";
+        descInput.value = "";
+    }
+
+    // ── Modals ──
+    function openNewEmneModal() {
+        document.getElementById("newEmneModal").classList.add("active");
+    }
+
+    function closeNewEmneModal() {
+        document.getElementById("newEmneModal").classList.remove("active");
+    }
+
+    function openTemaModal(index) {
+        selectedSubjectIndex = index;
+        var subject = subjects[index];
+        document.getElementById("temaModalTitle").textContent = subject.name + " – Vel tema";
+
+        var select = document.getElementById("temaSelect");
+        select.innerHTML = "";
+
+        if (subject.topics && subject.topics.length > 0) {
+            subject.topics.forEach(function(topic) {
+                var opt = document.createElement("option");
+                opt.value = topic;
+                opt.textContent = topic;
+                select.appendChild(opt);
+            });
+        } else {
+            var opt = document.createElement("option");
+            opt.value = "";
+            opt.textContent = "Ingen tema enno – legg til eit nedanfor";
+            select.appendChild(opt);
+        }
+
+        document.getElementById("temaModal").classList.add("active");
+    }
+
+    function closeTemaModal() {
+        document.getElementById("temaModal").classList.remove("active");
+        document.getElementById("newTemaInput").value = "";
+    }
+
+    function addTemaFromModal() {
+        var input = document.getElementById("newTemaInput");
+        var name = input.value.trim();
+        if (!name || selectedSubjectIndex === null) return;
+
+        subjects[selectedSubjectIndex].topics.push(name);
+        saveSubjects();
+        renderEmneCards();
+        openTemaModal(selectedSubjectIndex);
         input.value = "";
     }
 
-    function addTopic() {
-        const subjectIndex = document.getElementById("subjectSelect").value;
-        const topicInput = document.getElementById("newTopic");
-        const topicName = topicInput.value.trim();
-
-        if (!topicName || subjects.length === 0) return;
-
-        subjects[subjectIndex].topics.push(topicName);
-
-        saveSubjects();
-        renderSubjects();
-        topicInput.value = "";
-    }
-
     function goToQuestionPage() {
-        const subjectIndex = document.getElementById("goSubjectSelect").value;
-        const topic = document.getElementById("goTopicSelect").value;
-
-        if (!subjects[subjectIndex] || !topic) return;
-
-        const subject = subjects[subjectIndex].name;
+        if (selectedSubjectIndex === null) return;
+        var subject = subjects[selectedSubjectIndex].name;
+        var topic = document.getElementById("temaSelect").value;
+        if (!topic) return;
 
         window.location.href =
             "/sporsmal.html?subject=" + encodeURIComponent(subject) +
             "&topic=" + encodeURIComponent(topic);
     }
 
-    renderSubjects();
+    function goToTempChat() {
+        window.location.href = "/sporsmal.html?subject=Generelt&topic=Fritt%20spørsmål";
+    }
+
+    function loggUt() {
+        localStorage.removeItem("brukarnavn");
+        window.location.href = "/login.html";
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
+        overlay.addEventListener("click", function(e) {
+            if (e.target === overlay) {
+                overlay.classList.remove("active");
+            }
+        });
+    });
+
+    // ── Init ──
+    renderEmneCards();
+    updateStats();
 </script>
 
 </body>
