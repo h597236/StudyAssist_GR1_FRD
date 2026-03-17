@@ -177,25 +177,39 @@
     }
 
     // ── Add Subject ──
-    function addSubject() {
-        const nameInput = document.getElementById("modalEmneName");
-        const descInput = document.getElementById("modalEmneDesc");
-        const name = nameInput.value.trim();
-        const desc = descInput.value.trim();
+    async function addSubject() {
+        const emneNavn = document.getElementById("modalEmneName").value;
+        const emneDesc = document.getElementById("modalEmneDesc").value;
 
-        if (!name) return;
+        if (!emneNavn) {
+            alert("Skriv inn emnenamn");
+            return;
+        }
 
-        subjects.push({
-            name: name,
-            description: desc,
-            topics: []
-        });
+        try {
+            const response = await fetch("/emne", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    navn: emneNavn,
+                    beskrivelse: emneDesc
+                })
+            });
 
-        saveSubjects();
-        renderEmneCards();
-        closeNewEmneModal();
-        nameInput.value = "";
-        descInput.value = "";
+            const emne = await response.json();
+
+            // 👇 store selected emne globally for later use
+            window.selectedEmneId = emne.id;
+
+            closeNewEmneModal();
+
+            // open tema modal after creating emne
+            openTemaModal(emneNavn);
+
+        } catch (error) {
+            console.error(error);
+            alert("Feil ved oppretting av emne");
+        }
     }
 
     // ── Delete Subject ──
@@ -247,16 +261,42 @@
         document.getElementById("newTemaInput").value = "";
     }
 
-    function addTemaFromModal() {
-        var input = document.getElementById("newTemaInput");
-        var name = input.value.trim();
-        if (!name || selectedSubjectIndex === null) return;
+    async function addTemaFromModal() {
+        const temaNavn = document.getElementById("newTemaInput").value;
 
-        subjects[selectedSubjectIndex].topics.push(name);
-        saveSubjects();
-        renderEmneCards();
-        openTemaModal(selectedSubjectIndex);
-        input.value = "";
+        if (!temaNavn) {
+            alert("Skriv inn tema");
+            return;
+        }
+
+        if (!window.selectedEmneId) {
+            alert("Ingen emne valgt");
+            return;
+        }
+
+        try {
+            const response = await fetch("/tema", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    navn: temaNavn,
+                    emne: { id: window.selectedEmneId }
+                })
+            });
+
+            const tema = await response.json();
+
+            console.log("Tema lagret:", tema);
+
+            alert("Tema lagret!");
+
+            // optional: clear input
+            document.getElementById("newTemaInput").value = "";
+
+        } catch (error) {
+            console.error(error);
+            alert("Feil ved lagring av tema");
+        }
     }
 
     function goToQuestionPage() {

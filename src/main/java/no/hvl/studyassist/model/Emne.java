@@ -13,8 +13,8 @@ public class Emne {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int emneId;
 
-    private String namn;
-    private String laeringspunkt;
+    private String navn;
+    private String beskrivelse;
 
     @ManyToOne
     @JoinColumn(name = "brukarnamn")
