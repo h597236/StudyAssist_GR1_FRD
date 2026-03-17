@@ -31,14 +31,22 @@ async function registrer() {
     var brukarnavn = document.getElementById("brukarnavn").value.trim();
     var passord = document.getElementById("passord").value;
 
-    var response = await api("api/brukar/registrer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: brukarnavn, passord: passord })
-    });
+    try {
+        var response = await api("api/brukar/registrer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: brukarnavn, passord: passord })
+        });
 
-    var melding = await response.text();
-    showMelding(melding, response.ok ? "green" : "red");
+        if (response.ok) {
+            // ✅ YOUR CUSTOM SUCCESS MESSAGE
+            showMelding("Brukar registrert! Trykk logg inn!", "green");
+        } else {
+            showMelding("Registrering feilet.", "red");
+        }
+    } catch (error) {
+        showMelding("Klarte ikkje kontakte serveren.", "red");
+    }
 }
 
 function showMelding(text, color) {
