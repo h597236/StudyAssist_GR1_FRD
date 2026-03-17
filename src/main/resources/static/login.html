@@ -4,81 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logg inn – StudyAssist</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="login-wrapper">
     <div class="login-card">
-        <img src="logo_login.png" alt="Logo" class="navbar-logo">
+        <img src="img/logo_login.png" alt="Logo" class="navbar-logo">
 
         <p class="subtitle">Logg inn for å starte læringsøkta</p>
 
-        <input type="text" id="brukarnavn" placeholder="Brukarnamn">
-        <input type="password" id="passord" placeholder="Passord">
+        <form id="loginForm">
+            <input type="text" id="brukarnavn" placeholder="Brukarnamn">
+            <input type="password" id="passord" placeholder="Passord">
 
-        <button class="btn btn-primary" onclick="loggInn()">Logg inn</button>
+            <button type ="submit" class="btn btn-primary">Logg inn</button>
+        </form>
         <button class="btn btn-secondary" onclick="registrer()">Registrer ny brukar</button>
 
         <p id="melding"></p>
     </div>
 </div>
 
-<script>
-    async function loggInn() {
-        var brukarnavn = document.getElementById("brukarnavn").value.trim();
-        var passord = document.getElementById("passord").value;
-
-        if (!brukarnavn || !passord) {
-            showMelding("Fyll inn brukarnamn og passord.", "red");
-            return;
-        }
-
-        var response = await fetch("/api/brukar/logginn", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: brukarnavn, passord: passord })
-        });
-
-        if (response.ok) {
-            var user = await response.json();
-            localStorage.setItem("brukarId", user.id);
-            localStorage.setItem("brukarnavn", user.email);
-            window.location.href = "/index.html";
-        } else {
-            showMelding("Feil brukarnamn eller passord.", "red");
-        }
-    }
-
-    async function registrer() {
-        var brukarnavn = document.getElementById("brukarnavn").value.trim();
-        var passord = document.getElementById("passord").value;
-
-        if (!brukarnavn || !passord) {
-            showMelding("Fyll inn brukarnamn og passord.", "red");
-            return;
-        }
-
-        var response = await fetch("/api/brukar/registrer", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: brukarnavn, passord: passord })
-        });
-
-        var melding = await response.text();
-        if (response.ok) {
-            showMelding("Brukar oppretta! Logg inn no.", "green");
-        } else {
-            showMelding(melding, "red");
-        }
-    }
-
-    function showMelding(text, color) {
-        var el = document.getElementById("melding");
-        el.textContent = text;
-        el.style.color = color;
-    }
-</script>
+<script src="js/common.js"></script>
+<script src="js/login.js"></script>
 
 </body>
 </html>

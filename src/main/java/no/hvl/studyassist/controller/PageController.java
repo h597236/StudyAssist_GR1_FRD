@@ -15,4 +15,9 @@ public class PageController {
     public String login() {
         return "redirect:/login.html";
     }
+
+    @GetMapping("/")
+    public String index() {
+        return "redirect:/index.html";
+    }
 }
