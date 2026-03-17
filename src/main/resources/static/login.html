@@ -37,12 +37,13 @@
         var response = await fetch("/api/brukar/logginn", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brukarnavn: brukarnavn, passord: passord })
+            body: JSON.stringify({ email: brukarnavn, passord: passord })
         });
 
         if (response.ok) {
-            var namn = await response.text();
-            localStorage.setItem("brukarnavn", namn);
+            var user = await response.json();
+            localStorage.setItem("brukarId", user.id);
+            localStorage.setItem("brukarnavn", user.email);
             window.location.href = "/index.html";
         } else {
             showMelding("Feil brukarnamn eller passord.", "red");
@@ -61,7 +62,7 @@
         var response = await fetch("/api/brukar/registrer", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brukarnavn: brukarnavn, passord: passord })
+            body: JSON.stringify({ email: brukarnavn, passord: passord })
         });
 
         var melding = await response.text();

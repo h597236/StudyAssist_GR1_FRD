@@ -2,7 +2,7 @@ package no.hvl.studyassist.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 @Table(name = "tema")
@@ -13,9 +13,9 @@ public class Tema {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int temaId;
 
-    private String navn;
+    private String namn;
 
-    @JsonIgnore
+    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "emne_id")
     private Emne emne;

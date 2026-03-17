@@ -15,20 +15,26 @@ public class BrukarService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    public void registrer(String brukarnavn, String passord) {
+    public Brukar registrer(String email, String passord) {
         Brukar brukar = new Brukar();
-        brukar.setBrukarnavn(brukarnavn);
+        brukar.setEmail(email);
         brukar.setPassord(passwordEncoder.encode(passord));
-        brukarRepository.save(brukar);
+        return brukarRepository.save(brukar);
     }
 
-    public boolean loggInn(String brukarnavn, String passord) {
-        Brukar brukar = brukarRepository.findById(brukarnavn).orElse(null);
-        if (brukar == null) return false;
-        return passwordEncoder.matches(passord, brukar.getPassord());
+    public Brukar loggInn(String email, String passord) {
+        Brukar brukar = brukarRepository.findByEmail(email);
+
+        if (brukar == null) return null;
+
+        if (passwordEncoder.matches(passord, brukar.getPassord())) {
+            return brukar;
+        }
+
+        return null;
     }
 
-    public boolean finnes(String brukarnavn) {
-        return brukarRepository.existsById(brukarnavn);
+    public boolean finnes(String email) {
+        return brukarRepository.findByEmail(email) != null;
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/tema")
+@CrossOrigin
 public class TemaController {
 
     private final TemaService temaService;
@@ -17,12 +18,12 @@ public class TemaController {
     }
 
     @PostMapping
-    public Tema opprettTema(@RequestBody Tema tema) {
-        return temaService.lagreTema(tema);
+    public Tema create(@RequestBody Tema tema) {
+        return temaService.save(tema);
     }
 
     @GetMapping("/emne/{emneId}")
-    public List<Tema> hentTema(@PathVariable Integer emneId) {
-        return temaService.hentTemaForEmne(emneId);
+    public List<Tema> getByEmne(@PathVariable int emneId) {
+        return temaService.findByEmneId(emneId);
     }
 }

@@ -1,5 +1,6 @@
 package no.hvl.studyassist.controller;
 
+import no.hvl.studyassist.model.Brukar;
 import no.hvl.studyassist.service.BrukarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,33 +10,36 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/brukar")
+@CrossOrigin
 public class BrukarController {
 
     @Autowired
     private BrukarService brukarService;
 
     @PostMapping("/registrer")
-    public ResponseEntity<String> registrer(@RequestBody Map<String, String> body) {
-        String brukarnavn = body.get("brukarnavn");
+    public ResponseEntity<?> registrer(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
         String passord = body.get("passord");
 
-        if (brukarService.finnes(brukarnavn)) {
-            return ResponseEntity.badRequest().body("Brukarnamn er allereie tatt.");
+        if (brukarService.finnes(email)) {
+            return ResponseEntity.badRequest().body("Email er allereie brukt.");
         }
 
-        brukarService.registrer(brukarnavn, passord);
-        return ResponseEntity.ok("Brukar oppretta!");
+        Brukar brukar = brukarService.registrer(email, passord);
+        return ResponseEntity.ok(brukar);
     }
 
     @PostMapping("/logginn")
-    public ResponseEntity<String> loggInn(@RequestBody Map<String, String> body) {
-        String brukarnavn = body.get("brukarnavn");
+    public ResponseEntity<?> loggInn(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
         String passord = body.get("passord");
 
-        if (brukarService.loggInn(brukarnavn, passord)) {
-            return ResponseEntity.ok(brukarnavn);
+        Brukar brukar = brukarService.loggInn(email, passord);
+
+        if (brukar != null) {
+            return ResponseEntity.ok(brukar);
         } else {
-            return ResponseEntity.status(401).body("Feil brukarnamn eller passord.");
+            return ResponseEntity.status(401).body("Feil email eller passord.");
         }
     }
 }

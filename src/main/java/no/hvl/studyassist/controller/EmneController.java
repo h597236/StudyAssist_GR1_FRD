@@ -8,6 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/emne")
+@CrossOrigin
 public class EmneController {
 
     private final EmneService emneService;
@@ -17,12 +18,12 @@ public class EmneController {
     }
 
     @PostMapping
-    public Emne opprettEmne(@RequestBody Emne emne) {
-        return emneService.lagreEmne(emne);
+    public Emne create(@RequestBody Emne emne) {
+        return emneService.save(emne);
     }
 
-    @GetMapping
-    public List<Emne> hentAlle() {
-        return emneService.hentAlleEmner();
+    @GetMapping("/brukar/{brukarId}")
+    public List<Emne> getByBrukar(@PathVariable int brukarId) {
+        return emneService.findByBrukarId(brukarId);
     }
 }

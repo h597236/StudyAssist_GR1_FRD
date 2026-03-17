@@ -15,11 +15,11 @@ public class TemaService {
         this.temaRepository = temaRepository;
     }
 
-    public Tema lagreTema(Tema tema) {
+    public Tema save(Tema tema) {
         return temaRepository.save(tema);
     }
 
-    public List<Tema> hentTemaForEmne(Integer emneId) {
+    public List<Tema> findByEmneId(int emneId) {
         return temaRepository.findByEmneEmneId(emneId);
     }
 }

@@ -1,12 +1,7 @@
 package no.hvl.studyassist.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
-
-import java.util.List;
 
 @Entity
 @Table(name = "brukar")
@@ -14,10 +9,9 @@ import java.util.List;
 public class Brukar {
 
     @Id
-    private String brukarnavn;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
 
+    private String email;
     private String passord;
-
-    @OneToMany(mappedBy = "brukar")
-    private List<Emne> emner;
 }

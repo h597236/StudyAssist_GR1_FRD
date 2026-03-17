@@ -15,7 +15,6 @@
     <!-- Sidebar -->
     <aside class="sp-sidebar">
 
-        <!-- FIXED: Logo + Kom i gang (does not scroll) -->
         <div class="sp-sidebar-fixed">
             <a href="index.html" class="navbar-brand" style="color: var(--text-primary);">
                 <img src="logo1.png" alt="Logo" class="navbar-logo_sporsmal">
@@ -35,7 +34,6 @@
             </div>
         </div>
 
-        <!-- SCROLLABLE: Mine emner (only this part scrolls) -->
         <div class="sp-sidebar-scroll">
             <div class="sp-sidebar-section">
                 <div class="sp-sidebar-label">Mine emner</div>
@@ -46,7 +44,6 @@
             </div>
         </div>
 
-        <!-- FIXED: User footer (does not scroll) -->
         <div class="sp-sidebar-footer">
             <div class="sp-sidebar-avatar"></div>
             <span id="sidebarBrukarnavn">bruker@email.com</span>
@@ -58,21 +55,19 @@
     <!-- Main area -->
     <main class="sp-main">
 
-        <!-- Chat messages area (scrollable) -->
         <div class="chat-messages" id="chatMessages">
             <div class="chat-welcome">
-                <p class="sp-hint">Velg emne og tema og still spørsmålet ditt for å komme i gang</p>
+                <p class="sp-hint" id="selectedContext">Velg emne og tema og still spørsmålet ditt for å komme i gang</p>
             </div>
         </div>
 
-        <!-- Input bar pinned to bottom -->
         <div class="chat-input-bar">
             <div class="chat-input-inner">
                 <div class="sp-selects">
                     <select id="emneSelect" onchange="updateTemaSelect()">
                         <option value="">Emne</option>
                     </select>
-                    <select id="temaSelect">
+                    <select id="temaSelect" onchange="updateSelectedContext()">
                         <option value="">Tema</option>
                     </select>
                 </div>
@@ -86,8 +81,6 @@
     </main>
 
 </div>
-
-
 
 <!-- Modal: Nytt emne -->
 <div class="modal-overlay" id="nyttEmneModal">
@@ -118,40 +111,66 @@
 </div>
 
 <script>
-    // ── Data ──
-    var subjects = JSON.parse(localStorage.getItem("subjects")) || [];
-    var brukarnavn = localStorage.getItem("brukarnavn") || "bruker@email.com";
-    var activeEmneIndex = null;
+    const params = new URLSearchParams(window.location.search);
+    const emneIdFromUrl = params.get("emneId");
+    const temaFromUrl = params.get("tema");
+
+    const brukarnavn = localStorage.getItem("brukarnavn") || "bruker@email.com";
+    let activeEmneId = null;
+    let emner = [];
+    let temaMap = {};
 
     document.getElementById("sidebarBrukarnavn").textContent = brukarnavn;
 
-    function saveSubjects() {
-        localStorage.setItem("subjects", JSON.stringify(subjects));
+    async function loadEmner() {
+        try {
+            const brukarID = localStorage.getItem("brukarId");
+            const res = await fetch(`/emne/brukar/${brukarID}`);
+            if (!res.ok) throw new Error("Kunne ikkje hente emner");
+            emner = await res.json();
+
+            renderSidebar();
+            renderDropdowns();
+
+            if (emneIdFromUrl) {
+                document.getElementById("emneSelect").value = emneIdFromUrl;
+                await updateTemaSelect();
+
+                if (temaFromUrl) {
+                    document.getElementById("temaSelect").value = temaFromUrl;
+                }
+
+                updateSelectedContext();
+            }
+        } catch (error) {
+            console.error(error);
+        }
     }
 
-    // ── Sidebar emne list ──
     function renderSidebar() {
-        var list = document.getElementById("sidebarEmneList");
+        const list = document.getElementById("sidebarEmneList");
         list.innerHTML = "";
 
-        subjects.forEach(function(subject, index) {
-            var item = document.createElement("div");
+        emner.forEach(function(emne) {
+            const item = document.createElement("div");
             item.className = "sp-emne-item";
 
-            var header = document.createElement("div");
+            const header = document.createElement("div");
             header.className = "sp-emne-header";
-            header.onclick = function() { toggleEmne(index); };
+            header.onclick = function() {
+                toggleEmne(emne.emneId);
+            };
 
-            var dot = document.createElement("span");
+            const dot = document.createElement("span");
             dot.className = "sp-emne-dot";
 
-            var name = document.createElement("span");
+            const name = document.createElement("span");
             name.className = "sp-emne-name";
-            name.textContent = subject.name;
+            name.textContent = emne.namn;
 
-            var arrow = document.createElement("span");
+            const arrow = document.createElement("span");
             arrow.className = "sp-emne-arrow";
-            arrow.id = "arrow-" + index;
+            arrow.id = "arrow-" + emne.emneId;
             arrow.textContent = "∨";
 
             header.appendChild(dot);
@@ -159,31 +178,30 @@
             header.appendChild(arrow);
             item.appendChild(header);
 
-            var topics = document.createElement("div");
+            const topics = document.createElement("div");
             topics.className = "sp-emne-topics";
-            topics.id = "topics-" + index;
+            topics.id = "topics-" + emne.emneId;
 
-            if (subject.topics && subject.topics.length > 0) {
-                subject.topics.forEach(function(topic) {
-                    var link = document.createElement("a");
-                    link.href = "#";
-                    link.className = "sp-topic-link";
-                    link.textContent = topic;
-                    link.onclick = function(e) {
-                        e.preventDefault();
-                        selectEmneAndTema(index, topic);
-                    };
-                    topics.appendChild(link);
-                });
-            }
+            const temaListe = temaMap[emne.emneId] || [];
+            temaListe.forEach(function(temaObj) {
+                const link = document.createElement("a");
+                link.href = "#";
+                link.className = "sp-topic-link";
+                link.textContent = temaObj.namn;
+                link.onclick = function(e) {
+                    e.preventDefault();
+                    selectEmneAndTema(emne.emneId, temaObj.namn);
+                };
+                topics.appendChild(link);
+            });
 
-            var addBtn = document.createElement("a");
+            const addBtn = document.createElement("a");
             addBtn.href = "#";
             addBtn.className = "sp-topic-link sp-topic-add";
             addBtn.innerHTML = "<span class='sp-sidebar-icon'>＋</span> Nytt tema";
             addBtn.onclick = function(e) {
                 e.preventDefault();
-                openNyttTemaModal(index);
+                openNyttTemaModal(emne.emneId, emne.namn);
             };
             topics.appendChild(addBtn);
 
@@ -192,100 +210,115 @@
         });
     }
 
-    function toggleEmne(index) {
-        var topics = document.getElementById("topics-" + index);
-        var arrow = document.getElementById("arrow-" + index);
+    async function toggleEmne(emneId) {
+        const topics = document.getElementById("topics-" + emneId);
+        const arrow = document.getElementById("arrow-" + emneId);
 
-        if (topics.classList.contains("open")) {
-            topics.classList.remove("open");
-            arrow.textContent = "∨";
-        } else {
-            topics.classList.add("open");
-            arrow.textContent = "∧";
-        }
-    }
-
-    function selectEmneAndTema(emneIndex, tema) {
-        var emneSelect = document.getElementById("emneSelect");
-        var temaSelect = document.getElementById("temaSelect");
-
-        emneSelect.value = emneIndex;
-        updateTemaSelect();
-
-        for (var i = 0; i < temaSelect.options.length; i++) {
-            if (temaSelect.options[i].value === tema) {
-                temaSelect.value = tema;
-                break;
+        if (!temaMap[emneId]) {
+            try {
+                const res = await fetch(`/tema/emne/${emneId}`);
+                if (!res.ok) throw new Error("Kunne ikkje hente tema");
+                temaMap[emneId] = await res.json();
+                renderSidebar();
+            } catch (error) {
+                console.error(error);
+                alert("Feil ved henting av tema");
+                return;
             }
         }
+
+        const updatedTopics = document.getElementById("topics-" + emneId);
+        const updatedArrow = document.getElementById("arrow-" + emneId);
+
+        if (updatedTopics.classList.contains("open")) {
+            updatedTopics.classList.remove("open");
+            updatedArrow.textContent = "∨";
+        } else {
+            updatedTopics.classList.add("open");
+            updatedArrow.textContent = "∧";
+        }
     }
 
-    // ── Dropdowns ──
+    function selectEmneAndTema(emneId, temaNamn) {
+        const emneSelect = document.getElementById("emneSelect");
+        const temaSelect = document.getElementById("temaSelect");
+
+        emneSelect.value = emneId;
+        updateTemaSelect().then(function() {
+            temaSelect.value = temaNamn;
+            updateSelectedContext();
+        });
+    }
+
     function renderDropdowns() {
-        var emneSelect = document.getElementById("emneSelect");
+        const emneSelect = document.getElementById("emneSelect");
         emneSelect.innerHTML = '<option value="">Emne</option>';
 
-        subjects.forEach(function(subject, index) {
-            var opt = document.createElement("option");
-            opt.value = index;
-            opt.textContent = subject.name;
+        emner.forEach(function(emne) {
+            const opt = document.createElement("option");
+            opt.value = emne.emneId;
+            opt.textContent = emne.namn;
             emneSelect.appendChild(opt);
         });
-
-        var params = new URLSearchParams(window.location.search);
-        var urlSubject = params.get("subject");
-        var urlTopic = params.get("topic");
-
-        if (urlSubject) {
-            for (var i = 0; i < subjects.length; i++) {
-                if (subjects[i].name === urlSubject) {
-                    emneSelect.value = i;
-                    updateTemaSelect();
-                    if (urlTopic) {
-                        document.getElementById("temaSelect").value = urlTopic;
-                    }
-                    break;
-                }
-            }
-        }
     }
 
-    function updateTemaSelect() {
-        var emneSelect = document.getElementById("emneSelect");
-        var temaSelect = document.getElementById("temaSelect");
-        var idx = emneSelect.value;
+    async function updateTemaSelect() {
+        const emneSelect = document.getElementById("emneSelect");
+        const temaSelect = document.getElementById("temaSelect");
+        const emneId = emneSelect.value;
 
         temaSelect.innerHTML = '<option value="">Tema</option>';
 
-        if (idx !== "" && subjects[idx] && subjects[idx].topics) {
-            subjects[idx].topics.forEach(function(topic) {
-                var opt = document.createElement("option");
-                opt.value = topic;
-                opt.textContent = topic;
+        if (!emneId) {
+            updateSelectedContext();
+            return;
+        }
+
+        try {
+            if (!temaMap[emneId]) {
+                const res = await fetch(`/tema/emne/${emneId}`);
+                if (!res.ok) throw new Error("Kunne ikkje hente tema");
+                temaMap[emneId] = await res.json();
+            }
+
+            temaMap[emneId].forEach(function(temaObj) {
+                const opt = document.createElement("option");
+                opt.value = temaObj.namn;
+                opt.textContent = temaObj.namn;
                 temaSelect.appendChild(opt);
             });
+        } catch (error) {
+            console.error(error);
+            alert("Feil ved henting av tema");
         }
+
+        updateSelectedContext();
     }
 
-    // ── Send Question ──
+    function updateSelectedContext() {
+        const context = document.getElementById("selectedContext");
+        context.textContent = "Velg emne og tema og still spørsmålet ditt for å komme i gang";
+    }
+
     async function sendQuestion() {
-        var emneIdx = document.getElementById("emneSelect").value;
-        var tema = document.getElementById("temaSelect").value;
-        var question = document.getElementById("question").value.trim();
+        const emneId = document.getElementById("emneSelect").value;
+        const tema = document.getElementById("temaSelect").value;
+        const question = document.getElementById("question").value.trim();
 
         if (!question) return;
 
-        var subject = emneIdx !== "" ? subjects[emneIdx].name : "Generelt";
-        var topic = tema || "Fritt spørsmål";
+        const valgtEmne = emner.find(e => String(e.emneId) === String(emneId));
+        const subject = valgtEmne ? valgtEmne.namn : "Generelt";
+        const topic = tema || "Fritt spørsmål";
 
         addMessage("user", question);
         document.getElementById("question").value = "";
         autoResizeTextarea();
 
-        var loadingId = addMessage("ai", "Tenkjer...");
+        const loadingId = addMessage("ai", "Tenkjer...");
 
         try {
-            var response = await fetch("/api/ai/ask", {
+            const response = await fetch("/api/ai/ask", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -295,9 +328,9 @@
                 })
             });
 
-            var data = await response.json();
+            const data = await response.json();
 
-            var aiText = "";
+            let aiText = "";
             if (data.explanation) {
                 aiText += data.explanation;
             }
@@ -307,7 +340,7 @@
 
             updateMessage(loadingId, aiText || "Ingen forklaring mottatt.");
 
-            var count = parseInt(localStorage.getItem("sporsmalCount")) || 0;
+            const count = parseInt(localStorage.getItem("sporsmalCount")) || 0;
             localStorage.setItem("sporsmalCount", count + 1);
 
         } catch (error) {
@@ -316,15 +349,15 @@
         }
     }
 
-    var messageCounter = 0;
+    let messageCounter = 0;
 
     function addMessage(type, text) {
-        var messages = document.getElementById("chatMessages");
-        var welcome = messages.querySelector(".chat-welcome");
+        const messages = document.getElementById("chatMessages");
+        const welcome = messages.querySelector(".chat-welcome");
         if (welcome) welcome.style.display = "none";
 
-        var id = "msg-" + (++messageCounter);
-        var bubble = document.createElement("div");
+        const id = "msg-" + (++messageCounter);
+        const bubble = document.createElement("div");
         bubble.className = "chat-bubble chat-" + type;
         bubble.id = id;
         bubble.innerHTML = '<div class="chat-bubble-content">' + escapeHtml(text) + '</div>';
@@ -334,22 +367,21 @@
     }
 
     function updateMessage(id, text) {
-        var el = document.getElementById(id);
+        const el = document.getElementById(id);
         if (el) {
             el.querySelector(".chat-bubble-content").innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
         }
-        var messages = document.getElementById("chatMessages");
+        const messages = document.getElementById("chatMessages");
         messages.scrollTop = messages.scrollHeight;
     }
 
     function escapeHtml(str) {
-        var div = document.createElement("div");
+        const div = document.createElement("div");
         div.textContent = str;
         return div.innerHTML;
     }
 
-    // Auto-resize textarea
-    var textarea = document.getElementById("question");
+    const textarea = document.getElementById("question");
     textarea.addEventListener("input", autoResizeTextarea);
     textarea.addEventListener("keydown", function(e) {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -363,61 +395,125 @@
         textarea.style.height = Math.min(textarea.scrollHeight, 150) + "px";
     }
 
-    // ── Modals ──
     function openNyttEmneModal() {
         document.getElementById("nyttEmneModal").classList.add("active");
     }
+
     function closeNyttEmneModal() {
         document.getElementById("nyttEmneModal").classList.remove("active");
     }
 
-    function openNyttTemaModal(index) {
-        activeEmneIndex = index;
-        document.getElementById("nyttTemaTitle").textContent = subjects[index].name + " – Nytt tema";
+    async function addEmne() {
+        const brukarId = localStorage.getItem("brukarId");
+        const name = document.getElementById("modalEmneName2").value.trim();
+        const desc = document.getElementById("modalEmneDesc2").value.trim();
+        if (!name) return;
+
+        try {
+            const response = await fetch("/emne", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    namn: name,
+                    beskrivelse: desc,
+                    brukar: {
+                        id: brukarId
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const msg = await response.text();
+                throw new Error(msg || "Feil ved lagring av emne");
+            }
+
+            const nyttEmne = await response.json();
+            document.getElementById("modalEmneName2").value = "";
+            document.getElementById("modalEmneDesc2").value = "";
+            closeNyttEmneModal();
+
+            await loadEmner();
+            document.getElementById("emneSelect").value = nyttEmne.emneId;
+            await updateTemaSelect();
+            updateSelectedContext();
+        } catch (error) {
+            console.error(error);
+            alert("Feil ved lagring av emne");
+        }
+    }
+
+    function openNyttTemaModal(emneId, emneNamn) {
+        activeEmneId = emneId;
+        document.getElementById("nyttTemaTitle").textContent = emneNamn + " – Nytt tema";
         document.getElementById("nyttTemaModal").classList.add("active");
     }
+
     function closeNyttTemaModal() {
         document.getElementById("nyttTemaModal").classList.remove("active");
         document.getElementById("modalTemaName").value = "";
     }
 
+    async function addTema() {
+        const name = document.getElementById("modalTemaName").value.trim();
+        if (!name || activeEmneId === null) return;
+
+        try {
+            const response = await fetch("/tema", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    namn: name,
+                    emne: {
+                        emneId: activeEmneId
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const msg = await response.text();
+                throw new Error(msg || "Feil ved lagring av tema");
+            }
+
+            document.getElementById("modalTemaName").value = "";
+            closeNyttTemaModal();
+
+            // 🔥 ONLY reload THIS emne
+            temaMap[activeEmneId] = null;
+
+            const res = await fetch(`/tema/emne/${activeEmneId}`);
+            temaMap[activeEmneId] = await res.json();
+
+            renderSidebar(); // redraw WITHOUT closing everything
+
+            // 🔥 reopen the emne manually
+            const topics = document.getElementById("topics-" + activeEmneId);
+            const arrow = document.getElementById("arrow-" + activeEmneId);
+
+            if (topics) {
+                topics.classList.add("open");
+                arrow.textContent = "∧";
+            }
+
+            // update dropdown
+            document.getElementById("emneSelect").value = activeEmneId;
+            await updateTemaSelect();
+            document.getElementById("temaSelect").value = name;
+            updateSelectedContext();
+
+        } catch (error) {
+            console.error(error);
+            alert("Feil ved lagring av tema");
+        }
+    }
+
     function openNyChatModal() {
         document.getElementById("emneSelect").value = "";
-        updateTemaSelect();
+        document.getElementById("temaSelect").innerHTML = '<option value="">Tema</option>';
         document.getElementById("question").value = "";
-        // Clear chat
-        var messages = document.getElementById("chatMessages");
-        messages.innerHTML = '<div class="chat-welcome"><p class="sp-hint">Velg emne og tema og still spørsmålet ditt for å komme i gang</p></div>';
-    }
+        updateSelectedContext();
 
-    function addEmne() {
-        var name = document.getElementById("modalEmneName2").value.trim();
-        var desc = document.getElementById("modalEmneDesc2").value.trim();
-        if (!name) return;
-
-        subjects.push({ name: name, description: desc, topics: [] });
-        saveSubjects();
-        renderSidebar();
-        renderDropdowns();
-        closeNyttEmneModal();
-        document.getElementById("modalEmneName2").value = "";
-        document.getElementById("modalEmneDesc2").value = "";
-    }
-
-    function addTema() {
-        var name = document.getElementById("modalTemaName").value.trim();
-        if (!name || activeEmneIndex === null) return;
-
-        subjects[activeEmneIndex].topics.push(name);
-        saveSubjects();
-        renderSidebar();
-        renderDropdowns();
-        closeNyttTemaModal();
-
-        var topics = document.getElementById("topics-" + activeEmneIndex);
-        if (topics) topics.classList.add("open");
-        var arrow = document.getElementById("arrow-" + activeEmneIndex);
-        if (arrow) arrow.textContent = "∧";
+        const messages = document.getElementById("chatMessages");
+        messages.innerHTML = '<div class="chat-welcome"><p class="sp-hint" id="selectedContext">Velg emne og tema og still spørsmålet ditt for å komme i gang</p></div>';
     }
 
     function loggUt() {
@@ -436,9 +532,7 @@
         });
     });
 
-    // ── Init ──
-    renderSidebar();
-    renderDropdowns();
+    window.onload = loadEmner;
 </script>
 
 </body>

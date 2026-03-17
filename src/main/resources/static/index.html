@@ -109,71 +109,39 @@
 
 <script>
     // ── Data ──
-    let subjects = JSON.parse(localStorage.getItem("subjects")) || [];
     let sporsmalCount = parseInt(localStorage.getItem("sporsmalCount")) || 0;
     let selectedSubjectIndex = null;
-
-    function saveSubjects() {
-        localStorage.setItem("subjects", JSON.stringify(subjects));
-    }
 
     // ── Display username ──
     const brukarnavn = localStorage.getItem("brukarnavn") || "bruker";
     document.getElementById("navBrukarnavn").textContent = brukarnavn;
 
     // ── Stats ──
-    function updateStats() {
-        const totalEmne = subjects.length;
-        const totalTema = subjects.reduce((sum, s) => sum + (s.topics ? s.topics.length : 0), 0);
-        document.getElementById("statEmne").textContent = totalEmne;
-        document.getElementById("statTema").textContent = totalTema;
-        document.getElementById("statSporsmal").textContent = sporsmalCount;
-    }
+    async function loadStats() {
+        try {
+            const brukarId = localStorage.getItem("brukarId");
 
-    // ── Render Emne Cards ──
-    function renderEmneCards() {
-        const grid = document.getElementById("emneGrid");
-        const empty = document.getElementById("emptyState");
-        grid.innerHTML = "";
+            const res = await fetch(`/emne/brukar/${brukarId}`);
+            const emner = await res.json();
 
-        if (subjects.length === 0) {
-            empty.style.display = "block";
-            return;
-        }
+            document.getElementById("statEmne").textContent = emner.length;
 
-        empty.style.display = "none";
+            let totalTema = 0;
 
-        subjects.forEach((subject, index) => {
-            const topicCount = subject.topics ? subject.topics.length : 0;
-            const filledBars = Math.min(topicCount, 6);
-
-            let progressHTML = '';
-            for (let i = 0; i < 6; i++) {
-                progressHTML += '<span class="' + (i < filledBars ? 'filled' : '') + '"></span>';
+            for (const emne of emner) {
+                const temaRes = await fetch(`/tema/emne/${emne.emneId}`);
+                const temaListe = await temaRes.json();
+                totalTema += temaListe.length;
             }
 
-            const card = document.createElement("div");
-            card.className = "emne-card";
-            card.onclick = function() { openTemaModal(index); };
-            card.innerHTML =
-                '<div class="emne-card-top">' +
-                    '<div class="emne-icon"></div>' +
-                    '<button class="emne-delete-btn" title="Slett emne">✕</button>' +
-                '</div>' +
-                '<div class="emne-card-body">' +
-                    '<h3>' + subject.name + '</h3>' +
-                    '<p>' + (subject.description || 'Ingen skildring.') + '</p>' +
-                    '<div class="emne-progress">' + progressHTML + '</div>' +
-                '</div>';
-            grid.appendChild(card);
+            document.getElementById("statTema").textContent = totalTema;
 
-            card.querySelector(".emne-delete-btn").addEventListener("click", function(e) {
-                e.stopPropagation();
-                deleteSubject(index);
-            });
-        });
+            // keep this as is
+            document.getElementById("statSporsmal").textContent = sporsmalCount;
 
-        updateStats();
+        } catch (error) {
+            console.error("Stats error:", error);
+        }
     }
 
     // ── Add Subject ──
@@ -191,20 +159,24 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    navn: emneNavn,
-                    beskrivelse: emneDesc
+                    namn: emneNavn,
+                    beskrivelse: emneDesc,
+                    brukar: {
+                        id: parseInt(localStorage.getItem("brukarId"))
+                    }
                 })
             });
 
             const emne = await response.json();
 
             // 👇 store selected emne globally for later use
-            window.selectedEmneId = emne.id;
+            window.selectedEmneId = emne.emneId;
 
             closeNewEmneModal();
-
+            await loadEmner();
+            await loadStats();
             // open tema modal after creating emne
-            openTemaModal(emneNavn);
+            openTemaModal(emne.emneID);
 
         } catch (error) {
             console.error(error);
@@ -231,26 +203,35 @@
         document.getElementById("newEmneModal").classList.remove("active");
     }
 
-    function openTemaModal(index) {
-        selectedSubjectIndex = index;
-        var subject = subjects[index];
-        document.getElementById("temaModalTitle").textContent = subject.name + " – Vel tema";
+    async function openTemaModal(emneId) {
+        window.selectedEmneId = emneId;
 
-        var select = document.getElementById("temaSelect");
+        document.getElementById("temaModalTitle").textContent = "Vel tema";
+
+        const select = document.getElementById("temaSelect");
         select.innerHTML = "";
 
-        if (subject.topics && subject.topics.length > 0) {
-            subject.topics.forEach(function(topic) {
-                var opt = document.createElement("option");
-                opt.value = topic;
-                opt.textContent = topic;
+        try {
+            const res = await fetch(`/tema/emne/${emneId}`);
+            const temaListe = await res.json();
+
+            if (temaListe.length > 0) {
+                temaListe.forEach(tema => {
+                    const opt = document.createElement("option");
+                    opt.value = tema.namn;
+                    opt.textContent = tema.namn;
+                    select.appendChild(opt);
+                });
+            } else {
+                const opt = document.createElement("option");
+                opt.value = "";
+                opt.textContent = "Ingen tema enno – legg til eit nedanfor";
                 select.appendChild(opt);
-            });
-        } else {
-            var opt = document.createElement("option");
-            opt.value = "";
-            opt.textContent = "Ingen tema enno – legg til eit nedanfor";
-            select.appendChild(opt);
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("Feil ved henting av tema");
         }
 
         document.getElementById("temaModal").classList.add("active");
@@ -279,8 +260,10 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    navn: temaNavn,
-                    emne: { id: window.selectedEmneId }
+                    namn: temaNavn,
+                    emne: {
+                        emneId: window.selectedEmneId
+                    }
                 })
             });
 
@@ -288,7 +271,7 @@
 
             console.log("Tema lagret:", tema);
 
-            alert("Tema lagret!");
+            await openTemaModal(window.selectedEmneId);
 
             // optional: clear input
             document.getElementById("newTemaInput").value = "";
@@ -299,15 +282,71 @@
         }
     }
 
+    async function loadEmner() {
+        const brukarID = localStorage.getItem("brukarId");
+
+        const res = await fetch(`/emne/brukar/${brukarID}`);
+
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("Backend error:", text);
+            throw new Error("Failed to load emner");
+        }
+
+        const data = await res.json();
+        const emner = Array.isArray(data) ? data : [data];
+
+        const grid = document.getElementById("emneGrid");
+        const empty = document.getElementById("emptyState");
+
+        grid.innerHTML = "";
+
+        if (emner.length === 0) {
+            empty.style.display = "block";
+            return;
+        }
+
+        empty.style.display = "none";
+
+        emner.forEach(emne => {
+            const card = document.createElement("div");
+            card.className = "emne-card";
+
+            card.innerHTML =
+                '<div class="emne-card-top">' +
+                '<div class="emne-icon"></div>' +
+                '</div>' +
+                '<div class="emne-card-body">' +
+                '<h3>' + emne.namn + '</h3>' +
+                '<p>' + (emne.beskrivelse || 'Ingen skildring.') + '</p>' +
+                '</div>';
+
+            // 👇 IMPORTANT: store selected emneId
+            card.onclick = function() {
+                window.selectedEmneId = emne.emneId;
+                openTemaModal(emne.emneId);
+            };
+
+            grid.appendChild(card);
+        });
+    }
+
     function goToQuestionPage() {
-        if (selectedSubjectIndex === null) return;
-        var subject = subjects[selectedSubjectIndex].name;
-        var topic = document.getElementById("temaSelect").value;
-        if (!topic) return;
+        const tema = document.getElementById("temaSelect").value;
+
+        if (!window.selectedEmneId) {
+            alert("Ingen emne valgt");
+            return;
+        }
+
+        if (!tema) {
+            alert("Vel eit tema");
+            return;
+        }
 
         window.location.href =
-            "/sporsmal.html?subject=" + encodeURIComponent(subject) +
-            "&topic=" + encodeURIComponent(topic);
+            "/sporsmal.html?emneId=" + encodeURIComponent(window.selectedEmneId) +
+            "&tema=" + encodeURIComponent(tema);
     }
 
     function goToTempChat() {
@@ -329,8 +368,15 @@
     });
 
     // ── Init ──
-    renderEmneCards();
-    updateStats();
+    window.onload = async function() {
+        await loadEmner();
+        await loadStats();
+    };
+
+    window.addEventListener("pageshow", async function(event) {
+        await loadEmner();
+        await loadStats();
+    });
 </script>
 
 </body>
