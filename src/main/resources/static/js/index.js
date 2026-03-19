@@ -68,7 +68,7 @@ async function addSubject() {
         await loadEmner();
         await loadStats();
         // open tema modal after creating emne
-        openTemaModal(emne.emneID);
+        openTemaModal(emne.emneId);
 
     } catch (error) {
         console.error(error);
