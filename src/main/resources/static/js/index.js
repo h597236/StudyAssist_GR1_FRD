@@ -242,7 +242,7 @@ function goToQuestionPage() {
 }
 
 function goToTempChat() {
-    window.location.href = "sporsmal.html?subject=Generelt&topic=Fritt%20spørsmål";
+    window.location.href = "sporsmal.html?temp=true";
 }
 
 function loggUt() {

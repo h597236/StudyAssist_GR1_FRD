@@ -1,6 +1,8 @@
 requireLogin();
 
 const params = new URLSearchParams(window.location.search);
+const isTempChat = params.get("temp") === "true";
+
 const emneIdFromUrl = params.get("emneId");
 const temaFromUrl = params.get("tema");
 
@@ -190,15 +192,20 @@ function updateSelectedContext() {
 }
 
 async function sendQuestion() {
-    const emneId = document.getElementById("emneSelect").value;
-    const tema = document.getElementById("temaSelect").value;
     const question = document.getElementById("question").value.trim();
-
     if (!question) return;
 
-    const valgtEmne = emner.find(e => String(e.emneId) === String(emneId));
-    const subject = valgtEmne ? valgtEmne.namn : "Generelt";
-    const topic = tema || "Fritt spørsmål";
+    let subject = "Generelt";
+    let topic = "Fritt spørsmål";
+
+    if (!isTempChat) {
+        const emneId = document.getElementById("emneSelect").value;
+        const tema = document.getElementById("temaSelect").value;
+
+        const valgtEmne = emner.find(e => String(e.emneId) === String(emneId));
+        subject = valgtEmne ? valgtEmne.namn : "Generelt";
+        topic = tema || "Fritt spørsmål";
+    }
 
     addMessage("user", question);
     document.getElementById("question").value = "";
@@ -207,14 +214,24 @@ async function sendQuestion() {
     const loadingId = addMessage("ai", "Tenkjer...");
 
     try {
-        const response = await api("api/ai/ask", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+        let body;
+
+        if (isTempChat) {
+            body = JSON.stringify({
+                question: question
+            });
+        } else {
+            body = JSON.stringify({
                 subject: subject,
                 topic: topic,
                 question: question
-            })
+            });
+        }
+
+        const response = await api("api/ai/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: body
         });
 
         const data = await response.json();
@@ -410,10 +427,35 @@ function toggleSidebar() {
     document.querySelector(".sidebar-overlay").classList.toggle("open");
 }
 
+function initTempChat() {
+    // Hide bottom dropdowns
+    const emneSelect = document.getElementById("emneSelect");
+    const temaSelect = document.getElementById("temaSelect");
+
+    if (emneSelect) emneSelect.style.display = "none";
+    if (temaSelect) temaSelect.style.display = "none";
+
+    // Change middle text
+    const messages = document.getElementById("chatMessages");
+    messages.innerHTML = `
+        <div class="chat-welcome">
+            <p class="sp-hint" style="text-align:center; font-size:18px;">
+                Denne chatten er midlertidig og blir ikkje lagra
+            </p>
+        </div>
+    `;
+}
+
 document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
     overlay.addEventListener("click", function(e) {
         if (e.target === overlay) overlay.classList.remove("active");
     });
 });
 
-window.onload = loadEmner;
+window.onload = function () {
+    if (isTempChat) {
+        initTempChat();
+    } else {
+        loadEmner();
+    }
+};

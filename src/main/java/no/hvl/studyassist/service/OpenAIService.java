@@ -38,15 +38,25 @@ public class OpenAIService {
                     }
                     """;
 
-            String input = """
-                    Emne: %s
-                    Tema: %s
-                    Spørsmål: %s
-                    """.formatted(
-                    request.getSubject(),
-                    request.getTopic(),
-                    request.getQuestion()
-            );
+            String input;
+
+            if (request.getSubject() != null && request.getTopic() != null) {
+                input = """
+            Emne: %s
+            Tema: %s
+            Spørsmål: %s
+            """.formatted(
+                        request.getSubject(),
+                        request.getTopic(),
+                        request.getQuestion()
+                );
+            } else {
+                input = """
+            Spørsmål: %s
+            """.formatted(
+                        request.getQuestion()
+                );
+            }
 
             ResponseCreateParams params = ResponseCreateParams.builder()
                     .model("gpt-5.2")
