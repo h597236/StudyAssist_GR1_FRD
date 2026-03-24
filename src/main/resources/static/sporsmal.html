@@ -57,7 +57,27 @@
 
         <div class="chat-messages" id="chatMessages">
             <div class="chat-welcome">
-                <p class="sp-hint" id="selectedContext">Velg emne og tema og still spørsmålet ditt for å komme i gang</p>
+                <p class="sp-hint" id="selectedContext">
+                    Velg emne og tema og still spørsmålet ditt for å komme i gang
+                </p>
+            </div>
+
+            <!-- 🔥 Step 2: Follow-up -->
+            <div id="followUpContainer" style="display:none; margin-top:20px;">
+        <textarea id="followUpAnswer" class="chat-textarea"
+                  placeholder="Skriv refleksjonen din..."></textarea>
+                <button class="btn btn-primary" onclick="sendFollowUp()">
+                    Send svar
+                </button>
+            </div>
+
+            <!-- 🔥 Step 3: Feedback -->
+            <div id="feedbackContainer" style="display:none; margin-top:20px;">
+        <textarea id="feedbackInput" class="chat-textarea"
+                  placeholder="Gi tilbakemelding (valgfritt)..."></textarea>
+                <button class="btn btn-secondary" onclick="sendFeedback()">
+                    Fullfør
+                </button>
             </div>
         </div>
 
@@ -73,7 +93,9 @@
                 </div>
                 <div class="chat-input-row">
                     <textarea id="question" class="chat-textarea" placeholder="Skriv spørsmålet ditt her.." rows="1"></textarea>
-                    <button class="btn btn-primary chat-send-btn" onclick="sendQuestion()">Send</button>
+                    <button id="sendBtn" class="btn btn-primary chat-send-btn" onclick="sendQuestion()">
+                        Send
+                    </button>
                 </div>
             </div>
         </div>

@@ -1,3 +1,6 @@
+const SPORSMAL_FLOW_ENABLED = false;
+let currentSessionId = null;
+
 requireLogin();
 
 const params = new URLSearchParams(window.location.search);
@@ -192,66 +195,78 @@ function updateSelectedContext() {
 }
 
 async function sendQuestion() {
-    const question = document.getElementById("question").value.trim();
+    const input = document.getElementById("question");
+    const btn = document.getElementById("sendBtn");
+    const status = document.getElementById("chatStatus");
+    const chat = document.getElementById("chatMessages");
+
+    const question = input.value.trim();
     if (!question) return;
 
-    let subject = "Generelt";
-    let topic = "Fritt spørsmål";
+    // 🔹 Vis melding frå brukar
+    addUserMessage(question);
+    addThinkingMessage();
 
-    if (!isTempChat) {
-        const emneId = document.getElementById("emneSelect").value;
-        const tema = document.getElementById("temaSelect").value;
+    // 🔹 Reset input + UI
+    input.value = "";
+    btn.disabled = true;
+    if (status) status.style.display = "block";
 
-        const valgtEmne = emner.find(e => String(e.emneId) === String(emneId));
-        subject = valgtEmne ? valgtEmne.namn : "Generelt";
-        topic = tema || "Fritt spørsmål";
+    // Hvis ny flow ikkje er klar → bruk gammal løsning
+    if (!SPORSMAL_FLOW_ENABLED) {
+        try {
+            const res = await api("api/ai/ask", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question })
+            });
+
+            const data = await res.json();
+
+            removeThinkingMessage();
+            addAIMessage(
+                data.explanation ||
+                data.response ||
+                "❌ Ingen respons frå server"
+            );
+
+        } catch (err) {
+            addAIMessage("❌ Feil oppstod.");
+        } finally {
+            btn.disabled = false;
+            if (status) status.style.display = "none";
+            scrollToBottom();
+        }
+
+        return; // stopper resten
     }
 
-    addMessage("user", question);
-    document.getElementById("question").value = "";
-    autoResizeTextarea();
-
-    const loadingId = addMessage("ai", "Tenkjer...");
-
+    // NY FLOW (iteration 4)
     try {
-        let body;
-
-        if (isTempChat) {
-            body = JSON.stringify({
-                question: question
-            });
-        } else {
-            body = JSON.stringify({
-                subject: subject,
-                topic: topic,
-                question: question
-            });
-        }
-
-        const response = await api("api/ai/ask", {
+        const res = await api("sporsmal/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: body
+            body: JSON.stringify({ question })
         });
 
-        const data = await response.json();
+        const data = await res.json();
 
-        let aiText = "";
-        if (data.explanation) {
-            aiText += data.explanation;
-        }
-        if (data.follow_up_question) {
-            aiText += "\n\n💡 " + data.follow_up_question;
-        }
+        // Forventar:
+        // { sessionId, followUpQuestion }
 
-        updateMessage(loadingId, aiText || "Ingen forklaring mottatt.");
+        currentSessionId = data.sessionId;
 
-        const count = parseInt(localStorage.getItem("sporsmalCount")) || 0;
-        localStorage.setItem("sporsmalCount", count + 1);
+        addAIMessage(data.followUpQuestion);
 
-    } catch (error) {
-        updateMessage(loadingId, "Feil ved kall til backend. Sjekk at serveren køyrer.");
-        console.error(error);
+        // Vis neste steg
+        document.getElementById("followUpContainer").style.display = "block";
+
+    } catch (err) {
+        addAIMessage("❌ Feil oppstod.");
+    } finally {
+        btn.disabled = false;
+        if (status) status.style.display = "none";
+        scrollToBottom();
     }
 }
 
@@ -459,3 +474,70 @@ window.onload = function () {
         loadEmner();
     }
 };
+
+window.addEventListener("DOMContentLoaded", () => {
+    if (!SPORSMAL_FLOW_ENABLED) {
+        const follow = document.getElementById("followUpContainer");
+        const feedback = document.getElementById("feedbackContainer");
+
+        if (follow) follow.style.display = "none";
+        if (feedback) feedback.style.display = "none";
+    }
+});
+
+function addUserMessage(text) {
+    const chat = document.getElementById("chatMessages");
+
+    // Fjern welcome første gang
+    const welcome = document.querySelector(".chat-welcome");
+    if (welcome) welcome.remove();
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-user";
+    div.innerHTML = `<div class="chat-bubble-content">${text}</div>`;
+
+    chat.appendChild(div);
+    scrollToBottom();
+}
+
+function addAIMessage(text) {
+    const chat = document.getElementById("chatMessages");
+
+    // fjern welcome hvis fortsatt der
+    const welcome = document.querySelector(".chat-welcome");
+    if (welcome) welcome.remove();
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-ai";
+    div.innerHTML = `<div class="chat-bubble-content">${text}</div>`;
+
+    chat.appendChild(div);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const chat = document.getElementById("chatMessages");
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function addThinkingMessage() {
+    const chat = document.getElementById("chatMessages");
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-ai";
+    div.id = "thinkingBubble";
+
+    div.innerHTML = `
+        <div class="chat-bubble-content">
+            <em>⏳ AI jobbar med svaret...</em>
+        </div>
+    `;
+
+    chat.appendChild(div);
+    scrollToBottom();
+}
+
+function removeThinkingMessage() {
+    const el = document.getElementById("thinkingBubble");
+    if (el) el.remove();
+}
