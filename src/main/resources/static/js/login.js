@@ -31,6 +31,11 @@ async function registrer() {
     var brukarnavn = document.getElementById("brukarnavn").value.trim();
     var passord = document.getElementById("passord").value;
 
+    if (!brukarnavn || !passord) {
+        showMelding("Fyll inn brukarnamn og passord.", "red");
+        return;
+    }
+
     try {
         var response = await api("api/brukar/registrer", {
             method: "POST",

@@ -21,6 +21,14 @@ public class BrukarController {
         String email = body.get("email");
         String passord = body.get("passord");
 
+        if (email == null || email.isBlank() ||
+                passord == null || passord.isBlank()) {
+
+            return ResponseEntity
+                    .badRequest()
+                    .body("Email og passord må fyllast ut.");
+        }
+
         if (brukarService.finnes(email)) {
             return ResponseEntity.badRequest().body("Email er allereie brukt.");
         }
@@ -33,6 +41,14 @@ public class BrukarController {
     public ResponseEntity<?> loggInn(@RequestBody Map<String, String> body) {
         String email = body.get("email");
         String passord = body.get("passord");
+
+        if (email == null || email.isBlank() ||
+                passord == null || passord.isBlank()) {
+
+            return ResponseEntity
+                    .badRequest()
+                    .body("Email og passord må fyllast ut.");
+        }
 
         Brukar brukar = brukarService.loggInn(email, passord);
 
