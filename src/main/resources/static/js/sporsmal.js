@@ -331,11 +331,42 @@ async function sendQuestion() {
         return;
     }
 
+    if (isTempChat) {
+        try {
+            const res = await api("api/ai/ask", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: question
+                })
+            });
+
+            const data = await res.json();
+
+            removeThinkingMessage();
+
+            if (data.explanation) {
+                addAIMessage(data.explanation);
+            } else {
+                addAIMessage("❌ Ingen svar frå AI.");
+            }
+
+        } catch (err) {
+            console.error(err);
+            removeThinkingMessage();
+            addAIMessage("❌ Feil oppstod.");
+        }
+
+        btn.disabled = false;
+        scrollToBottom();
+        return;
+    }
+
     //START NY SESSION
     try {
         const temaIdRaw = document.getElementById("temaSelect").value;
 
-        if (!temaIdRaw) {
+        if (!temaIdRaw && !isTempChat) {
             removeThinkingMessage();
             addAIMessage("⚠️ Velg eit tema først.");
             btn.disabled = false;
