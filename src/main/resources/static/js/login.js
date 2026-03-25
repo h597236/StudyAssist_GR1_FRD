@@ -18,7 +18,7 @@ async function loggInn() {
             var user = await response.json();
             localStorage.setItem("brukarId", user.id);
             localStorage.setItem("brukarnavn", user.email);
-            window.location.href = "index.html";
+            window.location.href = "/home";
         } else {
             showMelding("Feil brukarnamn eller passord.", "red");
         }

@@ -248,12 +248,12 @@ function goToQuestionPage() {
     }
 
     window.location.href =
-        "sporsmal.html?emneId=" + encodeURIComponent(window.selectedEmneId) +
+        "/sporsmal?emneId=" + encodeURIComponent(window.selectedEmneId) +
         "&tema=" + encodeURIComponent(tema);
 }
 
 function goToTempChat() {
-    window.location.href = "sporsmal.html?temp=true";
+    window.location.href = "/sporsmal?temp=true";
 }
 
 async function loggUt() {
@@ -266,7 +266,7 @@ async function loggUt() {
 
     localStorage.removeItem("brukarnavn");
     localStorage.removeItem("brukarId");
-    window.location.href = "login.html";
+    window.location.href = "/login";
 }
 
 // Close modals on overlay click

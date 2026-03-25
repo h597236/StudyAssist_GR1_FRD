@@ -73,7 +73,7 @@ function filterHistory() {
         var card = document.createElement("div");
         card.className = "hist-card";
         card.onclick = function() {
-            window.location.href = "sporsmal.html?subject=" + encodeURIComponent(item.emne) + "&topic=" + encodeURIComponent(item.tema);
+            window.location.href = "/sporsmal?subject=" + encodeURIComponent(item.emne) + "&topic=" + encodeURIComponent(item.tema);
         };
         card.innerHTML =
             '<div class="hist-card-top">' +
@@ -115,7 +115,7 @@ function renderSidebar() {
         if (subject.topics && subject.topics.length > 0) {
             subject.topics.forEach(function(topic) {
                 var link = document.createElement("a");
-                link.href = "sporsmal.html?subject=" + encodeURIComponent(subject.name) + "&topic=" + encodeURIComponent(topic);
+                link.href = "/sporsmal?subject=" + encodeURIComponent(subject.name) + "&topic=" + encodeURIComponent(topic);
                 link.className = "sp-topic-link";
                 link.textContent = topic;
                 topics.appendChild(link);

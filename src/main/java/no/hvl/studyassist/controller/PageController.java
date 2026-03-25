@@ -6,18 +6,28 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class PageController {
 
-    @GetMapping("/sporsmal")
-    public String sporsmal() {
-        return "redirect:/sporsmal.html";
+    @GetMapping("/")
+    public String root() {
+        return "forward:/index.html";
+    }
+
+    @GetMapping("/home")
+    public String home() {
+        return "forward:/index.html";
     }
 
     @GetMapping("/login")
     public String login() {
-        return "redirect:/login.html";
+        return "forward:/login.html";
     }
 
-    @GetMapping("/")
-    public String index() {
-        return "redirect:/index.html";
+    @GetMapping("/sporsmal")
+    public String sporsmal() {
+        return "forward:/sporsmal.html";
+    }
+
+    @GetMapping("/historikk")
+    public String historikk() {
+        return "forward:/historikk.html";
     }
 }
