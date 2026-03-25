@@ -1149,8 +1149,8 @@ body {
   z-index: 40;
 }
 
-/* ── Responsive ── */
-@media (max-width: 700px) {
+/* ── Responsive: Tablet ── */
+@media (max-width: 900px) {
   .navbar {
     padding: 0 20px;
   }
@@ -1160,47 +1160,192 @@ body {
   }
 
   .main-content {
-    padding: 32px 18px 60px;
+    padding: 36px 20px 60px;
   }
 
   .stats-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
 
-  .emne-grid {
-    grid-template-columns: 1fr;
+  .stat-card {
+    padding: 16px 14px;
+    gap: 10px;
+  }
+
+  .section-panel {
+    padding: 24px 20px;
+  }
+}
+
+/* ── Responsive: Mobile ── */
+@media (max-width: 600px) {
+
+  /* ── Navbar mobile ── */
+  .navbar {
+    padding: 0 14px;
+    height: 54px;
+    gap: 8px;
+  }
+
+  .navbar-logo {
+    width: 70px;
+    height: 70px;
+  }
+
+  .navbar-links {
+    gap: 10px;
+  }
+
+  .navbar-links a {
+    font-size: 0.78rem;
+  }
+
+  .navbar-user {
+    gap: 8px;
+    font-size: 0.75rem;
+  }
+
+  .navbar-user span {
+    display: none;
+  }
+
+  .btn-logout {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  /* ── Main content mobile ── */
+  .main-content {
+    padding: 24px 14px 60px;
+  }
+
+  /* ── Welcome mobile ── */
+  .welcome {
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .welcome-avatar {
+    width: 42px;
+    height: 66px;
+  }
+
+  .welcome h1 {
+    font-size: 1.2rem;
+  }
+
+  /* ── Stats cards mobile: side-by-side, compact ── */
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 12px;
+    gap: 8px;
+  }
+
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  .stat-number {
+    font-size: 1.4rem;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+  }
+
+  /* ── Section panel mobile ── */
+  .section-panel {
+    padding: 20px 14px;
+    border-radius: var(--radius-md);
   }
 
   .section-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 14px;
+    gap: 12px;
+    margin-bottom: 20px;
   }
 
-  .welcome h1 {
-    font-size: 1.35rem;
+  .section-header h2 {
+    font-size: 1.15rem;
   }
 
-  .sp-sidebar {
-    width: 220px;
+  .section-actions {
+    width: 100%;
   }
 
-  .sp-main {
-    margin-left: 220px;
+  .section-actions .btn {
+    flex: 1;
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 0.82rem;
   }
 
-  .chat-messages {
-    padding: 30px 20px 16px;
+  /* ── Emne grid mobile ── */
+  .emne-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
-  .chat-input-bar {
-    padding: 12px 20px 16px;
+  .emne-card-top {
+    height: 80px;
   }
 
-  .sp-selects {
+  .emne-card-body {
+    padding: 14px 16px 16px;
+  }
+
+  .emne-card-body h3 {
+    font-size: 1rem;
+  }
+
+  /* ── Modal mobile ── */
+  .modal {
+    padding: 28px 20px;
+    width: 94%;
+    border-radius: var(--radius-md);
+  }
+
+  .modal h3 {
+    font-size: 1.1rem;
+  }
+
+  .modal-actions {
     flex-direction: column;
+    gap: 8px;
   }
 
+  .modal-actions .btn {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+  }
+
+  /* ── Login mobile ── */
+  .login-wrapper {
+    padding: 20px 14px;
+  }
+
+  .login-card {
+    padding: 32px 24px;
+  }
+
+  .login-card h1 {
+    font-size: 1.3rem;
+  }
+
+  /* ── Spørsmål sidebar mobile ── */
   .hamburger-btn {
     display: flex;
   }
@@ -1223,8 +1368,116 @@ body {
     margin-left: 0;
   }
 
+  /* ── Chat mobile ── */
+  .chat-messages {
+    padding: 20px 14px 14px;
+    gap: 12px;
+  }
+
+  .chat-bubble {
+    max-width: 92%;
+  }
+
+  .chat-user .chat-bubble-content,
+  .chat-ai .chat-bubble-content {
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+
+  .chat-input-bar {
+    padding: 10px 14px 14px;
+  }
+
+  .chat-textarea {
+    font-size: 0.88rem;
+    padding: 10px 12px;
+  }
+
+  .chat-send-btn {
+    padding: 8px 16px;
+    font-size: 0.82rem;
+  }
+
+  .sp-selects {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sp-selects select {
+    font-size: 0.85rem;
+  }
+
+  /* ── Historikk mobile ── */
+  .hist-content {
+    padding: 24px 14px 40px;
+  }
+
+  .hist-header h1 {
+    font-size: 1.2rem;
+    margin-bottom: 18px;
+  }
+
+  .hist-search-bar {
+    padding: 10px 14px;
+  }
+
+  .hist-filters {
+    gap: 6px;
+  }
+
+  .hist-chip {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
+  .hist-card {
+    padding: 16px 14px;
+  }
+
+  .hist-card-question {
+    font-size: 0.92rem;
+  }
+
+  .hist-card-answer {
+    font-size: 0.82rem;
+  }
+
+  /* ── Spørsmål page (non-chat layout) mobile ── */
+  .sporsmal-page {
+    padding: 24px 14px 60px;
+  }
+
+  .question-box {
+    padding: 20px 16px;
+  }
+
+  .question-box textarea {
+    height: 100px;
+  }
+
+  .response-card {
+    padding: 20px 16px;
+  }
 }
 
+/* ── Responsive: Very small screens ── */
+@media (max-width: 380px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 
+  .stat-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 14px;
+  }
 
+  .navbar-links {
+    gap: 6px;
+  }
 
+  .navbar-links a {
+    font-size: 0.72rem;
+  }
+}
