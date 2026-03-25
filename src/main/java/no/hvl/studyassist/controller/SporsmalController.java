@@ -59,4 +59,14 @@ public class SporsmalController {
         sporsmalService.handleTilbakemelding(sessionId, tekst);
         return ResponseEntity.ok("Tilbakemelding mottatt.");
     }
+
+    @GetMapping("/count")
+    public ResponseEntity<?> getSessionCount(HttpSession session) {
+        Brukar brukar = SessionUtil.getLoggedInBrukar(session, brukarService);
+        if (brukar == null) return ResponseEntity.status(401).body("Ikkje logga inn.");
+
+        long count = sporsmalService.getSessionCount(brukar.getId());
+
+        return ResponseEntity.ok(Map.of("count", count));
+    }
 }

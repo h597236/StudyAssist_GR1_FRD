@@ -1492,6 +1492,54 @@ body {
   }
 }
 
+.new-chat-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #2b7cff;
+  color: white;
+  cursor: pointer;
+}
+
+.new-chat-btn:hover {
+  background-color: #1f5fd1;
+}
+
+.star {
+  font-size: 24px;
+  cursor: pointer;
+  user-select: none;
+  color: #ccc;
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+
+.star:hover {
+  transform: scale(1.2);
+}
+
+.star {
+  color: #ccc;
+}
+
+.star.filled {
+  color: #f5b301; /* gull */
+}
+
+.sp-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #2b7cff;
+  color: white;
+  cursor: pointer;
+}
+
+.sp-btn:hover {
+  background-color: #1f5fd1;
+}
+
 
 
 

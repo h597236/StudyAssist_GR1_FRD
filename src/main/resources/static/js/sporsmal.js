@@ -1,331 +1,560 @@
+let currentSessionId = null;
+let isInitializing = true;
+
+const MIN_SVAR_LENGDE = 10;
+let isWaitingForReflection = false;// endre til 100 seinare
+let selectedRating = 0;
+
 requireLogin();
 
-// ── State ──
-let currentSessionId = null;
-let isTemp = false;
+const params = new URLSearchParams(window.location.search);
+const isTempChat = params.get("temp") === "true";
+
+const emneIdFromUrl = params.get("emneId");
+const temaFromUrl = params.get("tema");
 
 const brukarnavn = localStorage.getItem("brukarnavn") || "bruker@email.com";
+let activeEmneId = null;
+let emner = [];
+let temaMap = {};
+
 document.getElementById("sidebarBrukarnavn").textContent = brukarnavn;
 
-// ── Init ──
-window.onload = async function () {
-    const params = new URLSearchParams(window.location.search);
-    isTemp = params.get("temp") === "true";
-
-    await loadEmnerIntoSidebar();
-    await loadEmnerIntoDropdown();
-
-    const emneId = params.get("emneId");
-    const tema = params.get("tema");
-
-    if (emneId) {
-        document.getElementById("emneSelect").value = emneId;
-        await updateTemaSelect();
-
-        if (tema) {
-            const temaSelect = document.getElementById("temaSelect");
-            for (let opt of temaSelect.options) {
-                if (opt.textContent === tema) {
-                    temaSelect.value = opt.value;
-                    break;
-                }
-            }
-        }
-
-        updateSelectedContext();
-    }
-};
-
-// ── Load emner into dropdown ──
-async function loadEmnerIntoDropdown() {
-    const brukarId = localStorage.getItem("brukarId");
-    const select = document.getElementById("emneSelect");
-    select.innerHTML = '<option value="">Emne</option>';
-
+async function loadEmner() {
     try {
-        const res = await api(`emne/brukar/${brukarId}`);
-        const emner = await res.json();
+        const brukarID = localStorage.getItem("brukarId");
+        const res = await api(`emne/brukar/${brukarID}`);
+        if (!res.ok) throw new Error("Kunne ikkje hente emner");
+        emner = await res.json();
 
-        emner.forEach(emne => {
-            const opt = document.createElement("option");
-            opt.value = emne.emneId;
-            opt.textContent = emne.namn;
-            select.appendChild(opt);
-        });
-    } catch (e) {
-        console.error("Feil ved henting av emner:", e);
+        await loadAllTema();
+        renderSidebar();
+        renderDropdowns();
+
+        if (emneIdFromUrl) {
+            document.getElementById("emneSelect").value = emneIdFromUrl;
+            await updateTemaSelect();
+
+            if (temaFromUrl) {
+                const temaSelect = document.getElementById("temaSelect");
+
+                const interval = setInterval(() => {
+                    if (temaSelect.options.length > 1) {
+                        const temaListe = temaMap[emneIdFromUrl] || [];
+                        const match = temaListe.find(t => t.namn === temaFromUrl);
+
+                        if (match) {
+                            temaSelect.value = match.temaId;
+                        }
+                        updateSelectedContext();
+                        clearInterval(interval);
+
+                        // 🔥 viktig: først no er alt klart
+                        isInitializing = false;
+                        updateUrlFromDropdowns();
+                    }
+                }, 10);
+            } else {
+                isInitializing = false;
+            }
+            updateSelectedContext();
+        } else {
+            isInitializing = false;
+        }
+    } catch (error) {
+        console.error(error);
     }
 }
 
-// ── Update tema dropdown when emne changes ──
-async function updateTemaSelect() {
-    const emneId = document.getElementById("emneSelect").value;
-    const select = document.getElementById("temaSelect");
-    select.innerHTML = '<option value="">Tema</option>';
+function renderSidebar() {
+    const list = document.getElementById("sidebarEmneList");
+    list.innerHTML = "";
 
-    if (!emneId) return;
+    emner.forEach(function(emne) {
+        const item = document.createElement("div");
+        item.className = "sp-emne-item";
+
+        const header = document.createElement("div");
+        header.className = "sp-emne-header";
+        header.onclick = function() {
+            toggleEmne(emne.emneId);
+        };
+
+        const dot = document.createElement("span");
+        dot.className = "sp-emne-dot";
+
+        const name = document.createElement("span");
+        name.className = "sp-emne-name";
+        name.textContent = emne.namn;
+
+        const arrow = document.createElement("span");
+        arrow.className = "sp-emne-arrow";
+        arrow.id = "arrow-" + emne.emneId;
+        arrow.textContent = "∨";
+
+        header.appendChild(dot);
+        header.appendChild(name);
+        header.appendChild(arrow);
+        item.appendChild(header);
+
+        const topics = document.createElement("div");
+        topics.className = "sp-emne-topics";
+        topics.id = "topics-" + emne.emneId;
+
+        const temaListe = temaMap[emne.emneId] || [];
+        temaListe.forEach(function(temaObj) {
+            const link = document.createElement("a");
+            link.href = "#";
+            link.className = "sp-topic-link";
+            link.textContent = temaObj.namn;
+            link.onclick = function(e) {
+                e.preventDefault();
+                selectEmneAndTema(emne.emneId, temaObj.namn);
+            };
+            topics.appendChild(link);
+        });
+
+        const addBtn = document.createElement("a");
+        addBtn.href = "#";
+        addBtn.className = "sp-topic-link sp-topic-add";
+        addBtn.innerHTML = "<span class='sp-sidebar-icon'>＋</span> Nytt tema";
+        addBtn.onclick = function(e) {
+            e.preventDefault();
+            openNyttTemaModal(emne.emneId, emne.namn);
+        };
+        topics.appendChild(addBtn);
+
+        item.appendChild(topics);
+        list.appendChild(item);
+    });
+}
+
+async function toggleEmne(emneId) {
+    const topics = document.getElementById("topics-" + emneId);
+    const arrow = document.getElementById("arrow-" + emneId);
+
+    if (!temaMap[emneId]) {
+        try {
+            const res = await api(`tema/emne/${emneId}`);
+            if (!res.ok) throw new Error("Kunne ikkje hente tema");
+            temaMap[emneId] = await res.json();
+            renderSidebar();
+        } catch (error) {
+            console.error(error);
+            alert("Feil ved henting av tema");
+            return;
+        }
+    }
+
+    const updatedTopics = document.getElementById("topics-" + emneId);
+    const updatedArrow = document.getElementById("arrow-" + emneId);
+
+    if (updatedTopics.classList.contains("open")) {
+        updatedTopics.classList.remove("open");
+        updatedArrow.textContent = "∨";
+    } else {
+        updatedTopics.classList.add("open");
+        updatedArrow.textContent = "∧";
+    }
+}
+
+function selectEmneAndTema(emneId, temaNamn) {
+    const emneSelect = document.getElementById("emneSelect");
+    const temaSelect = document.getElementById("temaSelect");
+
+    emneSelect.value = emneId;
+    updateTemaSelect().then(function() {
+        temaSelect.value = temaNamn;
+        updateSelectedContext();
+        updateUrlFromDropdowns();
+    });
+}
+
+function renderDropdowns() {
+    const emneSelect = document.getElementById("emneSelect");
+    emneSelect.innerHTML = '<option value="">Emne</option>';
+
+    emner.forEach(function(emne) {
+        const opt = document.createElement("option");
+        opt.value = emne.emneId;
+        opt.textContent = emne.namn;
+        emneSelect.appendChild(opt);
+    });
+}
+
+async function updateTemaSelect() {
+    const emneSelect = document.getElementById("emneSelect");
+    const temaSelect = document.getElementById("temaSelect");
+    const emneId = emneSelect.value;
+
+    temaSelect.innerHTML = '<option value="">Tema</option>';
+
+    if (!emneId) {
+        updateSelectedContext();
+        updateUrlFromDropdowns();
+        return;
+    }
 
     try {
-        const res = await api(`tema/emne/${emneId}`);
-        const temaListe = await res.json();
+        if (!temaMap[emneId]) {
+            const res = await api(`tema/emne/${emneId}`);
+            if (!res.ok) throw new Error("Kunne ikkje hente tema");
+            temaMap[emneId] = await res.json();
+        }
 
-        temaListe.forEach(tema => {
+        temaMap[emneId].forEach(function(temaObj) {
             const opt = document.createElement("option");
-            opt.value = tema.temaId;
-            opt.textContent = tema.namn;
-            select.appendChild(opt);
+            opt.value = temaObj.temaId;
+            opt.textContent = temaObj.namn;
+            temaSelect.appendChild(opt);
         });
-    } catch (e) {
-        console.error("Feil ved henting av tema:", e);
+    } catch (error) {
+        console.error(error);
+        alert("Feil ved henting av tema");
     }
 
     updateSelectedContext();
     updateUrlFromDropdowns();
 }
 
-// ── Update context hint ──
 function updateSelectedContext() {
+    const context = document.getElementById("selectedContext");
+    if (!context) return; // 🔥 viktig
+
     const emneSelect = document.getElementById("emneSelect");
     const temaSelect = document.getElementById("temaSelect");
-    const emneText = emneSelect.options[emneSelect.selectedIndex]?.text || "";
-    const temaText = temaSelect.options[temaSelect.selectedIndex]?.text || "";
 
-    const hint = document.getElementById("selectedContext");
-    if (emneText && emneText !== "Emne" && temaText && temaText !== "Tema") {
-        hint.textContent = `${emneText} → ${temaText}`;
-    } else {
-        hint.textContent = "Velg emne og tema og still spørsmålet ditt for å komme i gang";
+    const emneTekst = emneSelect.options[emneSelect.selectedIndex]?.text || "";
+    const temaTekst = temaSelect.options[temaSelect.selectedIndex]?.text || "";
+
+    if (!emneSelect.value && !temaSelect.value) {
+        context.textContent = "Velg emne og tema og still spørsmålet ditt for å komme i gang";
+        return;
     }
+
+    if (emneSelect.value && !temaSelect.value) {
+        context.textContent = `Valt emne: ${emneTekst}`;
+        return;
+    }
+
+    context.textContent = `Valt emne: ${emneTekst} | Tema: ${temaTekst}`;
 }
 
-// ── Update URL ──
 function updateUrlFromDropdowns() {
+    if (isTempChat || isInitializing) return;
+
     const emneId = document.getElementById("emneSelect").value;
-    const tema = document.getElementById("temaSelect").options[document.getElementById("temaSelect").selectedIndex]?.text;
-    if (emneId) {
-        const url = `/sporsmal?emneId=${emneId}${tema ? "&tema=" + encodeURIComponent(tema) : ""}`;
-        history.replaceState(null, "", url);
-    }
+    const temaSelect = document.getElementById("temaSelect");
+    const temaId = temaSelect.value;
+    const temaNavn = temaSelect.options[temaSelect.selectedIndex]?.text;
+    const newParams = new URLSearchParams();
+
+    if (emneId) newParams.set("emneId", emneId);
+    if (temaId) newParams.set("temaId", temaId);
+    if (temaNavn) newParams.set("tema", temaNavn);
+
+    const queryString = newParams.toString();
+    const newUrl = queryString
+        ? `${window.location.pathname}?${queryString}`
+        : window.location.pathname;
+
+    history.replaceState({}, "", newUrl);
 }
 
-// ── Step 1: Send question ──
 async function sendQuestion() {
-    const temaId = document.getElementById("temaSelect").value;
-    const sporsmal = document.getElementById("question").value.trim();
-
-    if (!sporsmal) {
-        alert("Skriv inn eit spørsmål.");
+    if (!isWaitingForReflection && currentSessionId === null && document.getElementById("question").disabled) {
         return;
     }
 
-    // Temp mode — no emne/tema, use old AI endpoint
-    if (isTemp || !temaId) {
-        await sendTempQuestion(sporsmal);
+    const input = document.getElementById("question");
+    const btn = document.getElementById("sendBtn");
+
+    const question = input.value.trim();
+    if (!question) return;
+
+    // valider refleksjon
+    if (isWaitingForReflection && question.length < MIN_SVAR_LENGDE) {
+        showMelding(`Du må skrive minst ${MIN_SVAR_LENGDE} teikn.`, "red");
         return;
     }
 
-    appendMessage("Du", sporsmal);
-    document.getElementById("question").value = "";
-    document.getElementById("sendBtn").disabled = true;
+    addUserMessage(question);
+    input.value = "";
+    btn.disabled = true;
 
+    addThinkingMessage();
+
+    //REFLEKSJON FLOW
+    if (isWaitingForReflection) {
+        try {
+            const res = await api("api/sporsmal/refleksjon", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    sessionId: currentSessionId,
+                    svar: question
+                })
+            });
+
+            const data = await res.json();
+            removeThinkingMessage();
+
+            // ✅ vurdering
+            if (data.vurdering) {
+                addAIMessage("✅ " + data.vurdering);
+            }
+
+            // ✅ rating frå AI
+            if (data.rating !== null && data.rating !== undefined) {
+                addAIMessage("⭐ " + renderStars(data.rating));
+            }
+
+            // ✅ fasit
+            if (data.fasit) {
+                addAIMessage("📖 " + data.fasit);
+            }
+
+            // ✅ vis bruker rating UI
+            showUserRatingUI();
+
+            currentSessionId = null;
+            isWaitingForReflection = false;
+
+        } catch (err) {
+            console.error("ERROR:", err);
+            removeThinkingMessage();
+            addAIMessage("❌ Feil oppstod.");
+        }
+
+        btn.disabled = false;
+        scrollToBottom();
+        return;
+    }
+
+    //START NY SESSION
     try {
+        const temaIdRaw = document.getElementById("temaSelect").value;
+
+        if (!temaIdRaw) {
+            removeThinkingMessage();
+            addAIMessage("⚠️ Velg eit tema først.");
+            btn.disabled = false;
+            return;
+        }
+
+        const temaId = parseInt(temaIdRaw);
+
         const res = await api("api/sporsmal/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ temaId: parseInt(temaId), sporsmal })
+            body: JSON.stringify({
+                temaId: temaId,
+                sporsmal: question
+            })
         });
 
         const data = await res.json();
+
         currentSessionId = data.sessionId;
+        isWaitingForReflection = true;
 
-        if (data.explanation) appendMessage("StudyAssist", data.explanation);
-        if (data.followUpSporsmal) {
-            appendMessage("StudyAssist 🤔", "Oppfølgingsspørsmål: " + data.followUpSporsmal);
-            document.getElementById("followUpContainer").style.display = "block";
+        removeThinkingMessage();
+
+        if (data.oppfolgingsSporsmal) {
+            addAIMessage("🤔 Oppfølgingsspørsmål:\n" + data.oppfolgingsSporsmal);
+        } else {
+            currentSessionId = null;
+            isWaitingForReflection = false;
         }
 
-        // Update sporsmal count
-        let count = parseInt(localStorage.getItem("sporsmalCount")) || 0;
-        localStorage.setItem("sporsmalCount", count + 1);
-
-    } catch (e) {
-        appendMessage("Feil", "Noko gjekk gale. Prøv igjen.");
-        console.error(e);
+    } catch (err) {
+        console.error(err);
+        removeThinkingMessage();
+        addAIMessage("❌ Feil oppstod.");
     }
 
-    document.getElementById("sendBtn").disabled = false;
+    btn.disabled = isWaitingForReflection && question.length < MIN_SVAR_LENGDE;
+    scrollToBottom();
 }
 
-// ── Temp chat (no session) ──
-async function sendTempQuestion(sporsmal) {
-    appendMessage("Du", sporsmal);
-    document.getElementById("question").value = "";
+let messageCounter = 0;
 
-    try {
-        const res = await api("api/ai/ask", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question: sporsmal })
-        });
+function addMessage(type, text) {
+    const messages = document.getElementById("chatMessages");
+    const welcome = messages.querySelector(".chat-welcome");
+    if (welcome) welcome.style.display = "none";
 
-        const data = await res.json();
-        if (data.explanation) appendMessage("StudyAssist", data.explanation);
-        if (data.follow_up_question) appendMessage("StudyAssist 🤔", data.follow_up_question);
-    } catch (e) {
-        appendMessage("Feil", "Noko gjekk gale.");
-    }
+    const id = "msg-" + (++messageCounter);
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble chat-" + type;
+    bubble.id = id;
+    bubble.innerHTML = '<div class="chat-bubble-content">' + escapeHtml(text) + '</div>';
+    messages.appendChild(bubble);
+    messages.scrollTop = messages.scrollHeight;
+    return id;
 }
 
-// ── Step 2: Send follow-up answer ──
-async function sendFollowUp() {
-    const svar = document.getElementById("followUpAnswer").value.trim();
-    if (!svar) {
-        alert("Skriv inn svaret ditt.");
-        return;
+function updateMessage(id, text) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.querySelector(".chat-bubble-content").innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
     }
-
-    appendMessage("Du", svar);
-    document.getElementById("followUpContainer").style.display = "none";
-
-    try {
-        const res = await api("api/sporsmal/refleksjon", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: currentSessionId, svar })
-        });
-
-        const data = await res.json();
-        if (data.vurdering) appendMessage("Vurdering ✅", data.vurdering);
-        if (data.fasit) appendMessage("Fasit 📖", data.fasit);
-
-        document.getElementById("feedbackContainer").style.display = "block";
-    } catch (e) {
-        appendMessage("Feil", "Noko gjekk gale.");
-        console.error(e);
-    }
+    const messages = document.getElementById("chatMessages");
+    messages.scrollTop = messages.scrollHeight;
 }
 
-// ── Step 3: Send feedback ──
-async function sendFeedback() {
-    const tekst = document.getElementById("feedbackInput").value.trim();
-
-    try {
-        await api("api/sporsmal/tilbakemelding", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: currentSessionId, tekst })
-        });
-
-        document.getElementById("feedbackContainer").style.display = "none";
-        appendMessage("StudyAssist 🎉", "Takk for tilbakemeldinga! Økta er fullført.");
-        currentSessionId = null;
-        document.getElementById("followUpAnswer").value = "";
-        document.getElementById("feedbackInput").value = "";
-    } catch (e) {
-        appendMessage("Feil", "Noko gjekk gale.");
-        console.error(e);
-    }
+function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
 }
 
-// ── Append message to chat ──
-function appendMessage(sender, text) {
-    const container = document.getElementById("chatMessages");
-    const msg = document.createElement("div");
-    msg.className = "chat-message";
-    msg.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
-    container.appendChild(msg);
-    container.scrollTop = container.scrollHeight;
+const textarea = document.getElementById("question");
+textarea.addEventListener("input", autoResizeTextarea);
+textarea.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendQuestion();
+    }
+});
+
+function autoResizeTextarea() {
+    textarea.style.height = "auto";
+    textarea.style.height = Math.min(textarea.scrollHeight, 150) + "px";
 }
 
-// ── Sidebar ──
-async function loadEmnerIntoSidebar() {
-    const brukarId = localStorage.getItem("brukarId");
-    const list = document.getElementById("sidebarEmneList");
-    list.innerHTML = "";
-
-    try {
-        const res = await api(`emne/brukar/${brukarId}`);
-        const emner = await res.json();
-
-        for (const emne of emner) {
-            const item = document.createElement("div");
-            item.className = "sp-emne-item";
-
-            const header = document.createElement("div");
-            header.className = "sp-emne-header";
-            header.innerHTML = `<span class="sp-emne-dot"></span><span class="sp-emne-name">${emne.namn}</span><span class="sp-emne-arrow">∨</span>`;
-            header.onclick = async () => await toggleSidebarEmne(emne.emneId, item);
-
-            item.appendChild(header);
-            list.appendChild(item);
-        }
-    } catch (e) {
-        console.error("Sidebar feil:", e);
-    }
-}
-
-async function toggleSidebarEmne(emneId, item) {
-    let topics = item.querySelector(".sp-emne-topics");
-    if (topics) {
-        topics.classList.toggle("open");
-        return;
-    }
-
-    topics = document.createElement("div");
-    topics.className = "sp-emne-topics open";
-
-    try {
-        const res = await api(`tema/emne/${emneId}`);
-        const temaListe = await res.json();
-
-        temaListe.forEach(tema => {
-            const link = document.createElement("a");
-            link.href = `/sporsmal?emneId=${emneId}&tema=${encodeURIComponent(tema.namn)}`;
-            link.className = "sp-topic-link";
-            link.textContent = tema.namn;
-            topics.appendChild(link);
-        });
-    } catch (e) {
-        console.error(e);
-    }
-
-    item.appendChild(topics);
-}
-
-// ── Modals ──
 function openNyttEmneModal() {
     document.getElementById("nyttEmneModal").classList.add("active");
 }
+
 function closeNyttEmneModal() {
     document.getElementById("nyttEmneModal").classList.remove("active");
 }
+
 async function addEmne() {
+    const brukarId = localStorage.getItem("brukarId");
     const name = document.getElementById("modalEmneName2").value.trim();
     const desc = document.getElementById("modalEmneDesc2").value.trim();
     if (!name) return;
 
     try {
-        await api("emne", {
+        const response = await api("emne", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 namn: name,
                 beskrivelse: desc,
-                brukar: { id: parseInt(localStorage.getItem("brukarId")) }
+                brukar: {
+                    id: brukarId
+                }
             })
         });
-        closeNyttEmneModal();
-        await loadEmnerIntoSidebar();
-        await loadEmnerIntoDropdown();
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "Feil ved lagring av emne");
+        }
+
+        const nyttEmne = await response.json();
         document.getElementById("modalEmneName2").value = "";
         document.getElementById("modalEmneDesc2").value = "";
-    } catch (e) {
-        alert("Feil ved oppretting av emne");
+        closeNyttEmneModal();
+
+        await loadEmner();
+        document.getElementById("emneSelect").value = nyttEmne.emneId;
+        await updateTemaSelect();
+        updateSelectedContext();
+        updateUrlFromDropdowns();
+    } catch (error) {
+        console.error(error);
+        alert("Feil ved lagring av emne");
+    }
+}
+
+function openNyttTemaModal(emneId, emneNamn) {
+    activeEmneId = emneId;
+    document.getElementById("nyttTemaTitle").textContent = emneNamn + " – Nytt tema";
+    document.getElementById("nyttTemaModal").classList.add("active");
+}
+
+function closeNyttTemaModal() {
+    document.getElementById("nyttTemaModal").classList.remove("active");
+    document.getElementById("modalTemaName").value = "";
+}
+
+async function addTema() {
+    const name = document.getElementById("modalTemaName").value.trim();
+    if (!name || activeEmneId === null) return;
+
+    try {
+        const response = await api("tema", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                namn: name,
+                emne: {
+                    emneId: activeEmneId
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "Feil ved lagring av tema");
+        }
+
+        document.getElementById("modalTemaName").value = "";
+        closeNyttTemaModal();
+
+        temaMap[activeEmneId] = null;
+
+        const res = await api(`tema/emne/${activeEmneId}`);
+        temaMap[activeEmneId] = await res.json();
+
+        renderSidebar();
+
+        const topics = document.getElementById("topics-" + activeEmneId);
+        const arrow = document.getElementById("arrow-" + activeEmneId);
+
+        if (topics) {
+            topics.classList.add("open");
+            arrow.textContent = "∧";
+        }
+
+        document.getElementById("emneSelect").value = activeEmneId;
+        await updateTemaSelect();
+        document.getElementById("temaSelect").value = name;
+        updateSelectedContext();
+        updateUrlFromDropdowns();
+
+    } catch (error) {
+        console.error(error);
+        alert("Feil ved lagring av tema");
     }
 }
 
 function openNyChatModal() {
-    window.location.href = "/sporsmal";
+    currentSessionId = null;
+    isWaitingForReflection = false;
+
+    document.getElementById("question").disabled = false;
+    document.getElementById("sendBtn").disabled = false;
+
+    document.getElementById("emneSelect").value = "";
+    document.getElementById("temaSelect").innerHTML = '<option value="">Tema</option>';
+    document.getElementById("question").value = "";
+
+    updateSelectedContext();
+    history.replaceState({}, "", window.location.pathname);
+
+    const messages = document.getElementById("chatMessages");
+    messages.innerHTML = `
+        <div class="chat-welcome">
+            <p class="sp-hint">
+                Velg emne og tema og still spørsmålet ditt for å komme i gang
+            </p>
+        </div>
+    `;
 }
 
 function toggleSidebar() {
@@ -333,8 +562,219 @@ function toggleSidebar() {
     document.querySelector(".sidebar-overlay").classList.toggle("open");
 }
 
-document.querySelectorAll(".modal-overlay").forEach(overlay => {
-    overlay.addEventListener("click", e => {
+function initTempChat() {
+    const emneSelect = document.getElementById("emneSelect");
+    const temaSelect = document.getElementById("temaSelect");
+
+    if (emneSelect) emneSelect.style.display = "none";
+    if (temaSelect) temaSelect.style.display = "none";
+
+    const messages = document.getElementById("chatMessages");
+    messages.innerHTML = `
+        <div class="chat-welcome">
+            <p class="sp-hint" style="text-align:center; font-size:18px;">
+                Denne chatten er midlertidig og blir ikkje lagra
+            </p>
+        </div>
+    `;
+}
+
+document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
+    overlay.addEventListener("click", function(e) {
         if (e.target === overlay) overlay.classList.remove("active");
     });
 });
+
+window.onload = function () {
+    if (isTempChat) {
+        initTempChat();
+    } else {
+        loadEmner();
+    }
+};
+
+function addUserMessage(text) {
+    const chat = document.getElementById("chatMessages");
+
+    const welcome = document.querySelector(".chat-welcome");
+    if (welcome) welcome.remove();
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-user";
+    div.innerHTML = `<div class="chat-bubble-content">${escapeHtml(text)}</div>`;
+
+    chat.appendChild(div);
+    scrollToBottom();
+}
+
+function addAIMessage(text) {
+    const chat = document.getElementById("chatMessages");
+
+    const welcome = document.querySelector(".chat-welcome");
+    if (welcome) welcome.remove();
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-ai";
+    div.innerHTML = `<div class="chat-bubble-content">${escapeHtml(text)}</div>`;
+
+    chat.appendChild(div);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const chat = document.getElementById("chatMessages");
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function addThinkingMessage() {
+    const chat = document.getElementById("chatMessages");
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-ai";
+    div.id = "thinkingBubble";
+
+    div.innerHTML = `
+        <div class="chat-bubble-content">
+            <em>⏳ AI jobbar med svaret...</em>
+        </div>
+    `;
+
+    chat.appendChild(div);
+    scrollToBottom();
+}
+
+function removeThinkingMessage() {
+    const el = document.getElementById("thinkingBubble");
+    if (el) el.remove();
+}
+
+async function loadAllTema() {
+    for (const emne of emner) {
+        try {
+            const res = await api(`tema/emne/${emne.emneId}`);
+            if (res.ok) {
+                temaMap[emne.emneId] = await res.json();
+            } else {
+                temaMap[emne.emneId] = [];
+            }
+        } catch (e) {
+            console.error(e);
+            temaMap[emne.emneId] = [];
+        }
+    }
+}
+
+function parseVurdering(text) {
+    const match = text.match(/RATING:\s*(\d)/i);
+
+    let rating = null;
+
+    if (match) {
+        rating = parseInt(match[1]);
+        text = text.replace(/RATING:\s*\d/i, "").trim();
+    }
+
+    return { tekst: text, rating };
+}
+
+function renderClickableStars() {
+    let stars = "";
+
+    for (let i = 1; i <= 5; i++) {
+        stars += `<span class="star" data-value="${i}">☆</span>`;
+    }
+
+    return stars;
+}
+
+function showUserRatingUI() {
+    const chat = document.getElementById("chatMessages");
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-ai";
+
+    div.innerHTML = `
+        <div class="chat-bubble-content">
+            <p>Kor bra var svaret frå KI?</p>
+            <div class="ratingStars">
+                ${renderClickableStars()}
+            </div>
+        </div>
+    `;
+
+    chat.appendChild(div);
+
+    const stars = div.querySelectorAll(".star");
+
+    stars.forEach(star => {
+
+        star.addEventListener("mouseover", function () {
+            const rating = parseInt(star.dataset.value);
+            highlightStars(div, rating);
+        });
+
+        star.addEventListener("mouseout", function () {
+            highlightStars(div, selectedRating); // 👈 behold valgt
+        });
+
+        star.addEventListener("click", function () {
+            selectedRating = parseInt(star.dataset.value);
+
+            highlightStars(div, selectedRating);
+
+            showEndChatUI();
+        });
+    });
+}
+
+function highlightStars(container, rating) {
+    const stars = container.querySelectorAll(".star");
+
+    stars.forEach(star => {
+        const value = parseInt(star.dataset.value);
+
+        if (value <= rating) {
+            star.textContent = "★";
+            star.classList.add("filled");
+        } else {
+            star.textContent = "☆";
+            star.classList.remove("filled");
+        }
+    });
+}
+
+function renderStars(rating) {
+    let stars = "";
+    for (let i = 1; i <= 5; i++) {
+        stars += i <= rating ? "⭐" : "☆";
+    }
+    return stars;
+}
+
+function showEndChatUI() {
+    const chat = document.getElementById("chatMessages");
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-ai";
+
+    div.innerHTML = `
+        <div class="chat-bubble-content">
+            <p>✨ Takk for vurderinga!</p>
+            <button class="sp-btn">Start ny chat</button>
+        </div>
+    `;
+
+    chat.appendChild(div);
+
+    div.querySelector("button").onclick = openNyChatModal;
+
+    // 🔥 disable input
+    document.getElementById("question").disabled = true;
+    document.getElementById("sendBtn").disabled = true;
+
+    // 🔥 reset session
+    currentSessionId = null;
+    isWaitingForReflection = false;
+
+    scrollToBottom();
+}

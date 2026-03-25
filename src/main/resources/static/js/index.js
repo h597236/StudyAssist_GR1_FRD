@@ -29,8 +29,10 @@ async function loadStats() {
 
         document.getElementById("statTema").textContent = totalTema;
 
-        // keep this as is
-        document.getElementById("statSporsmal").textContent = sporsmalCount;
+        const sporsmalRes = await api("api/sporsmal/count");
+        const sporsmalData = await sporsmalRes.json();
+
+        document.getElementById("statSporsmal").textContent = sporsmalData.count;
 
     } catch (error) {
         console.error("Stats error:", error);
