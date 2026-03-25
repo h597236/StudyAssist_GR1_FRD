@@ -19,7 +19,10 @@
 
         <form id="loginForm">
             <input type="email" id="brukarnavn" placeholder="E-post" required>
-            <input type="password" id="passord" placeholder="Passord" required minlength="4">
+            <div class="password-wrapper">
+                <input type="password" id="passord" placeholder="Passord" required minlength="4">
+                <button type="button" class="password-toggle" onclick="togglePassword('passord', this)">VIS</button>
+            </div>
             <button type="submit" class="btn btn-primary">Logg inn</button>
         </form>
 
@@ -31,8 +34,14 @@
         <p class="subtitle">Opprett ein ny brukar</p>
 
         <input type="email" id="regEmail" placeholder="E-post" required>
-        <input type="password" id="regPassord" placeholder="Passord (minst 4 teikn)" required minlength="4">
-        <input type="password" id="regPassordRepeat" placeholder="Gjenta passord" required minlength="4">
+        <div class="password-wrapper">
+            <input type="password" id="regPassord" placeholder="Passord (minst 4 teikn)" required minlength="4">
+            <button type="button" class="password-toggle" onclick="togglePassword('regPassord', this)">VIS</button>
+        </div>
+        <div class="password-wrapper">
+            <input type="password" id="regPassordRepeat" placeholder="Gjenta passord" required minlength="4">
+            <button type="button" class="password-toggle" onclick="togglePassword('regPassordRepeat', this)">VIS</button>
+        </div>
         <button class="btn btn-primary" onclick="registrer()">Opprett brukar</button>
 
         <p class="login-switch">Har du allereie brukar? <a href="#" onclick="showLogin(); return false;">Logg inn</a></p>
