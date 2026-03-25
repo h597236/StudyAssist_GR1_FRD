@@ -14,7 +14,6 @@
     <groupId>no.hvl</groupId>
     <artifactId>StudyAssist-GR1-FRD</artifactId>
     <version>0.0.1</version>
-
     <packaging>war</packaging>
 
     <name>studyassist</name>
@@ -29,7 +28,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
@@ -45,15 +43,13 @@
             <scope>provided</scope>
         </dependency>
 
-
-
-
-        <!-- JPA (for database entities) -->
+        <!-- JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
+        <!-- PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -67,12 +63,11 @@
             <version>4.26.0</version>
         </dependency>
 
-
+        <!-- Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-
 
         <!-- Lombok -->
         <dependency>
@@ -99,16 +94,13 @@
     </dependencies>
 
     <build>
+        <finalName>studyassist-gr1-frd</finalName>
         <plugins>
-
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-
         </plugins>
-
-        <finalName>studyassist-gr1-frd</finalName>
     </build>
 
 </project>
