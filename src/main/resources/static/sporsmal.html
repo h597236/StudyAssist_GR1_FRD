@@ -23,7 +23,7 @@
 
             <div class="sp-sidebar-section">
                 <div class="sp-sidebar-label">Kom i gang</div>
-                <a href="/sporsmal?subject=Generelt&topic=Fritt%20spørsmål" class="sp-sidebar-link">
+                <a href="/sporsmal?temp=true" class="sp-sidebar-link">
                     Midlertidig chat
                 </a>
                 <a href="#" class="sp-sidebar-link" onclick="openNyChatModal(); return false;">
@@ -85,10 +85,10 @@
         <div class="chat-input-bar">
             <div class="chat-input-inner">
                 <div class="sp-selects">
-                    <select id="emneSelect" onchange="updateTemaSelect()">
+                    <select id="emneSelect" onchange="updateTemaSelect();">
                         <option value="">Emne</option>
                     </select>
-                    <select id="temaSelect" onchange="updateSelectedContext()">
+                    <select id="temaSelect" onchange="updateSelectedContext(); updateUrlFromDropdowns()">
                         <option value="">Tema</option>
                     </select>
                 </div>

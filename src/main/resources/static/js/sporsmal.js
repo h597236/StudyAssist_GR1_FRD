@@ -1,5 +1,6 @@
 const SPORSMAL_FLOW_ENABLED = false;
 let currentSessionId = null;
+let isInitializing = true;
 
 requireLogin();
 
@@ -23,6 +24,7 @@ async function loadEmner() {
         if (!res.ok) throw new Error("Kunne ikkje hente emner");
         emner = await res.json();
 
+        await loadAllTema();
         renderSidebar();
         renderDropdowns();
 
@@ -31,10 +33,25 @@ async function loadEmner() {
             await updateTemaSelect();
 
             if (temaFromUrl) {
-                document.getElementById("temaSelect").value = temaFromUrl;
-            }
+                const temaSelect = document.getElementById("temaSelect");
 
+                const interval = setInterval(() => {
+                    if (temaSelect.options.length > 1) {
+                        temaSelect.value = temaFromUrl;
+                        updateSelectedContext();
+                        clearInterval(interval);
+
+                        // 🔥 viktig: først no er alt klart
+                        isInitializing = false;
+                        updateUrlFromDropdowns();
+                    }
+                }, 10);
+            } else {
+                isInitializing = false;
+            }
             updateSelectedContext();
+        } else {
+            isInitializing = false;
         }
     } catch (error) {
         console.error(error);
@@ -141,6 +158,7 @@ function selectEmneAndTema(emneId, temaNamn) {
     updateTemaSelect().then(function() {
         temaSelect.value = temaNamn;
         updateSelectedContext();
+        updateUrlFromDropdowns();
     });
 }
 
@@ -165,6 +183,7 @@ async function updateTemaSelect() {
 
     if (!emneId) {
         updateSelectedContext();
+        updateUrlFromDropdowns();
         return;
     }
 
@@ -187,38 +206,84 @@ async function updateTemaSelect() {
     }
 
     updateSelectedContext();
+    updateUrlFromDropdowns();
 }
 
 function updateSelectedContext() {
     const context = document.getElementById("selectedContext");
-    context.textContent = "Velg emne og tema og still spørsmålet ditt for å komme i gang";
+    const emneSelect = document.getElementById("emneSelect");
+    const temaSelect = document.getElementById("temaSelect");
+
+    const emneTekst = emneSelect.options[emneSelect.selectedIndex]?.text || "";
+    const temaTekst = temaSelect.value || "";
+
+    if (!emneSelect.value && !temaSelect.value) {
+        context.textContent = "Velg emne og tema og still spørsmålet ditt for å komme i gang";
+        return;
+    }
+
+    if (emneSelect.value && !temaSelect.value) {
+        context.textContent = `Valt emne: ${emneTekst}`;
+        return;
+    }
+
+    context.textContent = `Valt emne: ${emneTekst} | Tema: ${temaTekst}`;
+}
+
+function updateUrlFromDropdowns() {
+    if (isTempChat || isInitializing) return;
+
+    const emneId = document.getElementById("emneSelect").value;
+    const tema = document.getElementById("temaSelect").value;
+
+    const newParams = new URLSearchParams();
+
+    if (emneId) newParams.set("emneId", emneId);
+    if (tema) newParams.set("tema", tema);
+
+    const queryString = newParams.toString();
+    const newUrl = queryString
+        ? `${window.location.pathname}?${queryString}`
+        : window.location.pathname;
+
+    history.replaceState({}, "", newUrl);
 }
 
 async function sendQuestion() {
     const input = document.getElementById("question");
     const btn = document.getElementById("sendBtn");
     const status = document.getElementById("chatStatus");
-    const chat = document.getElementById("chatMessages");
 
     const question = input.value.trim();
     if (!question) return;
 
-    // 🔹 Vis melding frå brukar
+    const emneSelect = document.getElementById("emneSelect");
+    const emneNavn = emneSelect.options[emneSelect.selectedIndex]?.text;
+    const tema = document.getElementById("temaSelect").value;
+
     addUserMessage(question);
     addThinkingMessage();
 
-    // 🔹 Reset input + UI
     input.value = "";
     btn.disabled = true;
     if (status) status.style.display = "block";
 
-    // Hvis ny flow ikkje er klar → bruk gammal løsning
     if (!SPORSMAL_FLOW_ENABLED) {
         try {
+            const body = { question };
+
+            if (emneNavn) {
+                body.subject = emneNavn;
+            }
+
+            if (tema) {
+                body.topic = tema;
+            }
+
             const res = await api("api/ai/ask", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ question })
+                body: JSON.stringify(body)
             });
 
             const data = await res.json();
@@ -231,6 +296,7 @@ async function sendQuestion() {
             );
 
         } catch (err) {
+            removeThinkingMessage();
             addAIMessage("❌ Feil oppstod.");
         } finally {
             btn.disabled = false;
@@ -238,30 +304,37 @@ async function sendQuestion() {
             scrollToBottom();
         }
 
-        return; // stopper resten
+        return;
     }
 
-    // NY FLOW (iteration 4)
     try {
+        const body = { question };
+
+        if (emneNavn) {
+            body.subject = emneNavn;
+        }
+
+        if (tema) {
+            body.topic = tema;
+        }
+
         const res = await api("sporsmal/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question })
+            body: JSON.stringify(body)
         });
 
         const data = await res.json();
 
-        // Forventar:
-        // { sessionId, followUpQuestion }
-
         currentSessionId = data.sessionId;
 
+        removeThinkingMessage();
         addAIMessage(data.followUpQuestion);
 
-        // Vis neste steg
         document.getElementById("followUpContainer").style.display = "block";
 
     } catch (err) {
+        removeThinkingMessage();
         addAIMessage("❌ Feil oppstod.");
     } finally {
         btn.disabled = false;
@@ -357,6 +430,7 @@ async function addEmne() {
         document.getElementById("emneSelect").value = nyttEmne.emneId;
         await updateTemaSelect();
         updateSelectedContext();
+        updateUrlFromDropdowns();
     } catch (error) {
         console.error(error);
         alert("Feil ved lagring av emne");
@@ -398,15 +472,13 @@ async function addTema() {
         document.getElementById("modalTemaName").value = "";
         closeNyttTemaModal();
 
-        // 🔥 ONLY reload THIS emne
         temaMap[activeEmneId] = null;
 
         const res = await api(`tema/emne/${activeEmneId}`);
         temaMap[activeEmneId] = await res.json();
 
-        renderSidebar(); // redraw WITHOUT closing everything
+        renderSidebar();
 
-        // 🔥 reopen the emne manually
         const topics = document.getElementById("topics-" + activeEmneId);
         const arrow = document.getElementById("arrow-" + activeEmneId);
 
@@ -415,11 +487,11 @@ async function addTema() {
             arrow.textContent = "∧";
         }
 
-        // update dropdown
         document.getElementById("emneSelect").value = activeEmneId;
         await updateTemaSelect();
         document.getElementById("temaSelect").value = name;
         updateSelectedContext();
+        updateUrlFromDropdowns();
 
     } catch (error) {
         console.error(error);
@@ -432,6 +504,7 @@ function openNyChatModal() {
     document.getElementById("temaSelect").innerHTML = '<option value="">Tema</option>';
     document.getElementById("question").value = "";
     updateSelectedContext();
+    history.replaceState({}, "", window.location.pathname);
 
     const messages = document.getElementById("chatMessages");
     messages.innerHTML = '<div class="chat-welcome"><p class="sp-hint" id="selectedContext">Velg emne og tema og still spørsmålet ditt for å komme i gang</p></div>';
@@ -443,14 +516,12 @@ function toggleSidebar() {
 }
 
 function initTempChat() {
-    // Hide bottom dropdowns
     const emneSelect = document.getElementById("emneSelect");
     const temaSelect = document.getElementById("temaSelect");
 
     if (emneSelect) emneSelect.style.display = "none";
     if (temaSelect) temaSelect.style.display = "none";
 
-    // Change middle text
     const messages = document.getElementById("chatMessages");
     messages.innerHTML = `
         <div class="chat-welcome">
@@ -488,7 +559,6 @@ window.addEventListener("DOMContentLoaded", () => {
 function addUserMessage(text) {
     const chat = document.getElementById("chatMessages");
 
-    // Fjern welcome første gang
     const welcome = document.querySelector(".chat-welcome");
     if (welcome) welcome.remove();
 
@@ -503,7 +573,6 @@ function addUserMessage(text) {
 function addAIMessage(text) {
     const chat = document.getElementById("chatMessages");
 
-    // fjern welcome hvis fortsatt der
     const welcome = document.querySelector(".chat-welcome");
     if (welcome) welcome.remove();
 
@@ -540,4 +609,20 @@ function addThinkingMessage() {
 function removeThinkingMessage() {
     const el = document.getElementById("thinkingBubble");
     if (el) el.remove();
+}
+
+async function loadAllTema() {
+    for (const emne of emner) {
+        try {
+            const res = await api(`tema/emne/${emne.emneId}`);
+            if (res.ok) {
+                temaMap[emne.emneId] = await res.json();
+            } else {
+                temaMap[emne.emneId] = [];
+            }
+        } catch (e) {
+            console.error(e);
+            temaMap[emne.emneId] = [];
+        }
+    }
 }

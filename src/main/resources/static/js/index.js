@@ -3,6 +3,7 @@ requireLogin();
 // ── Data ──
 let sporsmalCount = parseInt(localStorage.getItem("sporsmalCount")) || 0;
 let selectedSubjectIndex = null;
+let activeEmneId = null;
 
 // ── Display username ──
 const brukarnavn = localStorage.getItem("brukarnavn") || "bruker";
@@ -235,21 +236,23 @@ async function loadEmner() {
 }
 
 function goToQuestionPage() {
-    const tema = document.getElementById("temaSelect").value;
+    const temaSelect = document.getElementById("temaSelect");
 
-    if (!window.selectedEmneId) {
-        alert("Ingen emne valgt");
+    const tema = temaSelect.value;
+    const emneId = window.selectedEmneId; // denne har du allerede satt når du åpner modal
+
+    if (!emneId) {
+        alert("Vel eit emne først");
         return;
     }
 
-    if (!tema) {
-        alert("Vel eit tema");
-        return;
+    let url = `/sporsmal?emneId=${emneId}`;
+
+    if (tema) {
+        url += `&tema=${encodeURIComponent(tema)}`;
     }
 
-    window.location.href =
-        "/sporsmal?emneId=" + encodeURIComponent(window.selectedEmneId) +
-        "&tema=" + encodeURIComponent(tema);
+    window.location.href = url;
 }
 
 function goToTempChat() {
