@@ -26,4 +26,9 @@ public class EmneController {
     public List<Emne> getByBrukar(@PathVariable int brukarId) {
         return emneService.findByBrukarId(brukarId);
     }
+
+    @DeleteMapping("/{emneId}")
+    public void delete(@PathVariable int emneId) {
+        emneService.deleteById(emneId);
+    }
 }

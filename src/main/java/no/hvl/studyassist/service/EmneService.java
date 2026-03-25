@@ -35,4 +35,8 @@ public class EmneService {
     public List<Emne> findByBrukarId(int brukarId) {
         return emneRepository.findByBrukar_Id(brukarId);
     }
+
+    public void deleteById(int emneId) {
+        emneRepository.deleteById(emneId);
+    }
 }

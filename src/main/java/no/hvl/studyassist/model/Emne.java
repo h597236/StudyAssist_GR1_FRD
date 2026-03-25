@@ -23,6 +23,6 @@ public class Emne {
     private Brukar brukar;
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "emne")
+    @OneToMany(mappedBy = "emne", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tema> tema;
 }

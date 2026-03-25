@@ -207,17 +207,28 @@ async function loadEmner() {
         card.innerHTML =
             '<div class="emne-card-top">' +
             '<div class="emne-icon"></div>' +
+            '<button class="emne-delete-btn" title="Slett emne">&times;</button>' +
             '</div>' +
             '<div class="emne-card-body">' +
             '<h3>' + emne.namn + '</h3>' +
             '<p>' + (emne.beskrivelse || 'Ingen skildring.') + '</p>' +
             '</div>';
 
-        // 👇 IMPORTANT: store selected emneId
-        card.onclick = function() {
+        // Delete button – use mousedown to fire before card click
+        var deleteBtn = card.querySelector(".emne-delete-btn");
+        deleteBtn.addEventListener("mousedown", function(e) {
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            openDeleteModal(emne.emneId, emne.namn);
+        });
+
+        // Card click – open tema modal
+        card.addEventListener("click", function(e) {
+            if (e.target.closest(".emne-delete-btn")) return;
             window.selectedEmneId = emne.emneId;
             openTemaModal(emne.emneId);
-        };
+        });
 
         grid.appendChild(card);
     });
@@ -259,6 +270,42 @@ document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
         }
     });
 });
+
+// ── Delete Emne (with confirmation modal) ──
+let pendingDeleteEmneId = null;
+
+function openDeleteModal(emneId, emneNavn) {
+    pendingDeleteEmneId = emneId;
+    document.getElementById("deleteEmneName").textContent = emneNavn;
+    document.getElementById("deleteEmneModal").classList.add("active");
+}
+
+function closeDeleteModal() {
+    pendingDeleteEmneId = null;
+    document.getElementById("deleteEmneModal").classList.remove("active");
+}
+
+async function confirmDeleteEmne() {
+    if (!pendingDeleteEmneId) return;
+
+    try {
+        const res = await api("emne/" + pendingDeleteEmneId, {
+            method: "DELETE"
+        });
+
+        if (!res.ok) {
+            throw new Error("Sletting feila");
+        }
+
+        closeDeleteModal();
+        await loadEmner();
+        await loadStats();
+
+    } catch (error) {
+        console.error("Delete error:", error);
+        alert("Kunne ikkje slette emnet. Prøv igjen.");
+    }
+}
 
 // ── Init ──
 window.onload = async function() {

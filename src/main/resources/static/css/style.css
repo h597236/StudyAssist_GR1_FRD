@@ -280,6 +280,16 @@ body {
   border-color: var(--text-muted);
 }
 
+.btn-danger {
+  background: #c83232;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #a82828;
+  box-shadow: 0 4px 14px rgba(200, 50, 50, 0.3);
+}
+
 /* ── Subject Cards Grid ── */
 .emne-grid {
   display: grid;
@@ -1481,3 +1491,7 @@ body {
     font-size: 0.72rem;
   }
 }
+
+
+
+
