@@ -37,4 +37,8 @@ public class BrukarService {
     public boolean finnes(String email) {
         return brukarRepository.findByEmail(email) != null;
     }
+
+    public Brukar findById(int id) {
+        return brukarRepository.findById(id).orElse(null);
+    }
 }

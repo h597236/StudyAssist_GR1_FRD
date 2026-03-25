@@ -36,6 +36,12 @@ public class EmneService {
         return emneRepository.findByBrukar_Id(brukarId);
     }
 
+    public boolean eigesAvBrukar(int emneId, int brukarId) {
+        return emneRepository.findById(emneId)
+                .map(emne -> emne.getBrukar() != null && emne.getBrukar().getId() == brukarId)
+                .orElse(false);
+    }
+
     public void deleteById(int emneId) {
         emneRepository.deleteById(emneId);
     }

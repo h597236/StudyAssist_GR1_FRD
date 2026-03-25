@@ -1,7 +1,10 @@
 package no.hvl.studyassist.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import no.hvl.studyassist.model.Brukar;
 import no.hvl.studyassist.service.BrukarService;
+import no.hvl.studyassist.util.SessionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,11 +37,14 @@ public class BrukarController {
         }
 
         Brukar brukar = brukarService.registrer(email, passord);
-        return ResponseEntity.ok(brukar);
+        return ResponseEntity.ok(Map.of(
+                "id", brukar.getId(),
+                "email", brukar.getEmail()
+        ));
     }
 
     @PostMapping("/logginn")
-    public ResponseEntity<?> loggInn(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> loggInn(@RequestBody Map<String, String> body, HttpServletRequest request) {
         String email = body.get("email");
         String passord = body.get("passord");
 
@@ -53,9 +59,37 @@ public class BrukarController {
         Brukar brukar = brukarService.loggInn(email, passord);
 
         if (brukar != null) {
-            return ResponseEntity.ok(brukar);
+            HttpSession session = request.getSession(true);
+            session.setAttribute("brukarId", brukar.getId());
+
+            return ResponseEntity.ok(Map.of(
+                    "id", brukar.getId(),
+                    "email", brukar.getEmail()
+            ));
         } else {
             return ResponseEntity.status(401).body("Feil email eller passord.");
         }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me(HttpSession session) {
+        Brukar brukar = SessionUtil.getLoggedInBrukar(session, brukarService);
+
+        if (brukar == null) {
+            return ResponseEntity.status(401).body("Ikkje logga inn.");
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "id", brukar.getId(),
+                "email", brukar.getEmail()
+        ));
+    }
+
+    @PostMapping("/loggut")
+    public ResponseEntity<?> loggUt(HttpSession session) {
+        if (session != null) {
+            session.invalidate();
+        }
+        return ResponseEntity.ok().build();
     }
 }

@@ -256,7 +256,14 @@ function goToTempChat() {
     window.location.href = "sporsmal.html?temp=true";
 }
 
-function loggUt() {
+async function loggUt() {
+    try {
+        await api("api/brukar/loggut", {
+            method: "POST"
+        });
+    } catch (error) {
+    }
+
     localStorage.removeItem("brukarnavn");
     localStorage.removeItem("brukarId");
     window.location.href = "login.html";

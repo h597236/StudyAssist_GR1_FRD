@@ -1,10 +1,7 @@
 function getBase() {
     const path = window.location.pathname;
-
-    // if running under /something/
     const parts = path.split('/').filter(p => p.length > 0);
 
-    // if first part is a file (like login.html), return empty
     if (parts.length === 1 && parts[0].includes('.html')) {
         return '';
     }
@@ -12,9 +9,21 @@ function getBase() {
     return parts.length > 0 ? '/' + parts[0] : '';
 }
 
-function api(path, options = {}) {
+async function api(path, options = {}) {
     const base = getBase();
-    return fetch(`${base}/${path}`, options);
+    const response = await fetch(`${base}/${path}`, options);
+
+    const isAuthEndpoint = path === "api/brukar/logginn" ||
+        path === "api/brukar/registrer";
+
+    if (response.status === 401 && !isAuthEndpoint) {
+        localStorage.removeItem("brukarnavn");
+        localStorage.removeItem("brukarId");
+        window.location.href = "login.html";
+        throw new Error("Unauthorized");
+    }
+
+    return response;
 }
 
 function requireLogin() {
@@ -23,7 +32,14 @@ function requireLogin() {
     }
 }
 
-function loggUt() {
+async function loggUt() {
+    try {
+        await api("api/brukar/loggut", {
+            method: "POST"
+        });
+    } catch (error) {
+    }
+
     localStorage.removeItem("brukarnavn");
     localStorage.removeItem("brukarId");
     window.location.href = "login.html";
