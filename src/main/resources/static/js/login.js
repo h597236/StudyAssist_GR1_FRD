@@ -27,12 +27,30 @@ async function loggInn() {
     }
 }
 
-async function registrer() {
-    var brukarnavn = document.getElementById("brukarnavn").value.trim();
-    var passord = document.getElementById("passord").value;
+function showRegister() {
+    document.getElementById("loginView").style.display = "none";
+    document.getElementById("registerView").style.display = "block";
+    document.getElementById("melding").textContent = "";
+}
 
-    if (!brukarnavn || !passord) {
-        showMelding("Fyll inn brukarnamn og passord.", "red");
+function showLogin() {
+    document.getElementById("registerView").style.display = "none";
+    document.getElementById("loginView").style.display = "block";
+    document.getElementById("melding").textContent = "";
+}
+
+async function registrer() {
+    var email = document.getElementById("regEmail").value.trim();
+    var passord = document.getElementById("regPassord").value;
+    var passordRepeat = document.getElementById("regPassordRepeat").value;
+
+    if (!email || !passord) {
+        showMelding("Fyll inn alle felt.", "red");
+        return;
+    }
+
+    if (passord !== passordRepeat) {
+        showMelding("Passorda er ikkje like.", "red");
         return;
     }
 
@@ -40,12 +58,12 @@ async function registrer() {
         var response = await api("api/brukar/registrer", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: brukarnavn, passord: passord })
+            body: JSON.stringify({ email: email, passord: passord })
         });
 
         if (response.ok) {
-            // ✅ YOUR CUSTOM SUCCESS MESSAGE
-            showMelding("Brukar registrert! Trykk logg inn!", "green");
+            showMelding("Brukar registrert!", "green");
+            setTimeout(function() { showLogin(); }, 1500);
         } else {
             showMelding("Registrering feilet.", "red");
         }

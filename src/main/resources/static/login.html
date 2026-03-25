@@ -11,21 +11,36 @@
 
 <div class="login-wrapper">
     <div class="login-card">
-        <img src="img/logo_login.png" alt="Logo" class="navbar-logo">
+    <img src="img/logo_login.png" alt="Logo" class="navbar-logo">
 
+    <!-- Logg inn-visning -->
+    <div id="loginView">
         <p class="subtitle">Logg inn for å starte læringsøkta</p>
 
         <form id="loginForm">
-            <input type="email" id="brukarnavn" placeholder="Brukarnamn" required>
+            <input type="email" id="brukarnavn" placeholder="E-post" required>
             <input type="password" id="passord" placeholder="Passord" required minlength="4">
-
-            <button type ="submit" class="btn btn-primary">Logg inn</button>
+            <button type="submit" class="btn btn-primary">Logg inn</button>
         </form>
-        <button class="btn btn-secondary" onclick="registrer()">Registrer ny brukar</button>
 
-        <p id="melding"></p>
+        <p class="login-switch">Har du ikkje brukar? <a href="#" onclick="showRegister(); return false;">Registrer deg</a></p>
     </div>
+
+    <!-- Registrer-visning -->
+    <div id="registerView" style="display: none;">
+        <p class="subtitle">Opprett ein ny brukar</p>
+
+        <input type="email" id="regEmail" placeholder="E-post" required>
+        <input type="password" id="regPassord" placeholder="Passord (minst 4 teikn)" required minlength="4">
+        <input type="password" id="regPassordRepeat" placeholder="Gjenta passord" required minlength="4">
+        <button class="btn btn-primary" onclick="registrer()">Opprett brukar</button>
+
+        <p class="login-switch">Har du allereie brukar? <a href="#" onclick="showLogin(); return false;">Logg inn</a></p>
+    </div>
+
+    <p id="melding"></p>
 </div>
+
 
 <script src="js/common.js"></script>
 <script src="js/login.js"></script>
