@@ -94,20 +94,6 @@
 
 <!-- Modal: Vel tema for emne -->
 <div class="modal-overlay" id="temaModal">
-
-<!-- Modal: Bekreft sletting -->
-<div class="modal-overlay" id="deleteEmneModal">
-    <div class="modal">
-        <h3>Slette emne?</h3>
-        <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 20px;">
-            Er du sikker på at du vil slette <strong id="deleteEmneName"></strong>? Alle tema og spørsmål knytt til emnet vert sletta permanent.
-        </p>
-        <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="closeDeleteModal()">Avbryt</button>
-            <button class="btn btn-danger" onclick="confirmDeleteEmne()">Slett emne</button>
-        </div>
-    </div>
-</div>
     <div class="modal">
         <h3 id="temaModalTitle">Vel tema</h3>
         <label for="temaSelect">Tema:</label>
@@ -122,8 +108,21 @@
     </div>
 </div>
 
+<!-- Modal: Bekreft sletting -->
+<div class="modal-overlay" id="deleteEmneModal">
+    <div class="modal">
+        <h3>Slette emne?</h3>
+        <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 20px;">
+            Er du sikker på at du vil slette <strong id="deleteEmneName"></strong>? Alle tema og spørsmål knytt til emnet vert sletta permanent.
+        </p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Avbryt</button>
+            <button class="btn btn-danger" onclick="confirmDeleteEmne()">Slett emne</button>
+        </div>
+    </div>
+</div>
+
 <script src="js/common.js"></script>
 <script src="js/index.js"></script>
-
 </body>
 </html>
