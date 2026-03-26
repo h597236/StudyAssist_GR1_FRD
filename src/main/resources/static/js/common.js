@@ -36,7 +36,7 @@ async function api(path, options = {}) {
     if (response.status === 401 && !isAuthEndpoint) {
         localStorage.removeItem("brukarnavn");
         localStorage.removeItem("brukarId");
-        window.location.href = "/login";
+        window.location.href = getBase() + "/login";
         throw new Error("Unauthorized");
     }
 
@@ -45,7 +45,7 @@ async function api(path, options = {}) {
 
 function requireLogin() {
     if (!localStorage.getItem("brukarId")) {
-        window.location.href = "/login";
+        window.location.href = getBase() + "/login";
     }
 }
 
@@ -59,7 +59,7 @@ async function loggUt() {
 
     localStorage.removeItem("brukarnavn");
     localStorage.removeItem("brukarId");
-    window.location.href = "/login";
+    window.location.href = getBase() + "/login";
 }
 
 async function loadEmner() {
@@ -142,7 +142,7 @@ function renderSidebar() {
             link.textContent = temaObj.namn;
             link.onclick = function(e) {
                 e.preventDefault();
-                window.location.href = `/sporsmal?emneId=${emne.emneId}&temaId=${temaObj.temaId}`;
+                window.location.href = getBase() + `/sporsmal?emneId=${emne.emneId}&temaId=${temaObj.temaId}`;
             };
             topics.appendChild(link);
         });

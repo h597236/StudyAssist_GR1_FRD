@@ -124,5 +124,16 @@
 
 <script src="js/common.js"></script>
 <script src="js/index.js"></script>
+<script>
+    (function() {
+        const base = getBase();
+        document.querySelectorAll("a[href]").forEach(function(a) {
+            const href = a.getAttribute("href");
+            if (href.startsWith("/") && !href.startsWith("//")) {
+                a.setAttribute("href", base + href);
+            }
+        });
+    })();
+</script>
 </body>
 </html>

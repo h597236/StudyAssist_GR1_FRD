@@ -108,7 +108,7 @@ async function openTemaModal(emneId) {
         if (temaListe.length > 0) {
             temaListe.forEach(tema => {
                 const opt = document.createElement("option");
-                opt.value = tema.namn;
+                opt.value = tema.temaId;
                 opt.textContent = tema.namn;
                 select.appendChild(opt);
             });
@@ -243,17 +243,17 @@ function goToQuestionPage() {
         return;
     }
 
-    let url = `/sporsmal?emneId=${emneId}`;
+    let url = getBase() + `/sporsmal?emneId=${emneId}`;
 
     if (tema) {
-        url += `&tema=${encodeURIComponent(tema)}`;
+        url += `&temaId=${tema}`;
     }
 
     window.location.href = url;
 }
 
 function goToTempChat() {
-    window.location.href = "/sporsmal?temp=true";
+    window.location.href = getBase() + "/sporsmal?temp=true";
 }
 
 async function loggUt() {
@@ -266,7 +266,7 @@ async function loggUt() {
 
     localStorage.removeItem("brukarnavn");
     localStorage.removeItem("brukarId");
-    window.location.href = "/login";
+    window.location.href = getBase() + "/login";
 }
 
 // Close modals on overlay click

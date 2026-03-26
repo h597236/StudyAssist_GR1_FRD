@@ -73,7 +73,7 @@ function filterHistory() {
         var card = document.createElement("div");
         card.className = "hist-card";
         card.onclick = function() {
-            window.location.href = "/sporsmal?subject=" + encodeURIComponent(item.emne) + "&topic=" + encodeURIComponent(item.tema);
+            window.location.href = getBase() + "/sporsmal?subject=" + encodeURIComponent(item.emne) + "&topic=" + encodeURIComponent(item.tema);
         };
         card.innerHTML =
             '<div class="hist-card-top">' +

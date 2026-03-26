@@ -28,7 +28,7 @@ function selectEmneAndTema(emneId, temaId) {
         updateSelectedContext();
 
         if (isTempChat) {
-            window.location.href = `/sporsmal?emneId=${emneId}&temaId=${temaId}`;
+            window.location.href = getBase() + `/sporsmal?emneId=${emneId}&temaId=${temaId}`;
             return;
         }
 
@@ -294,7 +294,7 @@ function autoResizeTextarea() {
 }
 
 function openNyChatModal() {
-    window.location.href = "/sporsmal";
+    window.location.href = getBase() + "/sporsmal";
 }
 
 function initTempChat() {
