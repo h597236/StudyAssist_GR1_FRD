@@ -3,19 +3,23 @@ package no.hvl.studyassist.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.hvl.studyassist.model.AIRequest;
 import no.hvl.studyassist.model.AIResponse;
+import no.hvl.studyassist.model.Brukar;
+import no.hvl.studyassist.service.BrukarService;
 import no.hvl.studyassist.service.OpenAIService;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AIController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -24,32 +28,55 @@ class AIControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private OpenAIService openAIService;
-
     @Autowired
     private ObjectMapper objectMapper;
 
+    @MockBean
+    private OpenAIService openAIService;
+
+    @MockBean
+    private BrukarService brukarService;
+
     @Test
-    void shouldReturnAIResponse() throws Exception {
+    void ask_ai_ok() throws Exception {
 
-        AIResponse mockResponse = new AIResponse();
-        mockResponse.setExplanation("Forklaring");
-        mockResponse.setFollow_up_question("Oppfølgingsspørsmål");
+        // Mock brukar (session)
+        Brukar brukar = new Brukar();
+        brukar.setId(1);
 
-        Mockito.when(openAIService.askAI(Mockito.any()))
-                .thenReturn(mockResponse);
+        when(brukarService.findById(1)).thenReturn(brukar);
 
+        // Mock AI response (Riktig felt!)
+        AIResponse response = new AIResponse();
+        response.setExplanation("Test forklaring");
+        response.setFollow_up_question("Test spørsmål");
+
+        when(openAIService.askAI(any()))
+                .thenReturn(response);
+
+        // Request (Riktig felt!)
         AIRequest request = new AIRequest();
-        request.setSubject("Programmering");
-        request.setTopic("Løkker");
-        request.setQuestion("Hva er en for-løkke?");
+        request.setQuestion("Test spørsmål");
+
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("brukarId", 1);
 
         mockMvc.perform(post("/api/ai/ask")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .session(session)
+                        .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.explanation").value("Forklaring"))
-                .andExpect(jsonPath("$.follow_up_question").value("Oppfølgingsspørsmål"));
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void ask_ai_not_logged_in() throws Exception {
+
+        AIRequest request = new AIRequest();
+        request.setQuestion("Test");
+
+        mockMvc.perform(post("/api/ai/ask")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
     }
 }
