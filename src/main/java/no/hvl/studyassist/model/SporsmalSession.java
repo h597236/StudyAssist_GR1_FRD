@@ -22,19 +22,19 @@ public class SporsmalSession {
     @JoinColumn(name = "tema_id")
     private Tema tema;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String startSporsmal;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String oppfolgingsSporsmal;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String brukarRefleksjon;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String vurdering;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String fasitSvar;
 
     @Column
