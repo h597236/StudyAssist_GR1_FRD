@@ -274,7 +274,7 @@ async function sendQuestion() {
 
     // valider refleksjon
     if (isWaitingForReflection && question.length < MIN_SVAR_LENGDE) {
-        showMelding(`Du må skrive minst ${MIN_SVAR_LENGDE} teikn.`, "red");
+        addAIMessage(`❌ Du må skrive minst ${MIN_SVAR_LENGDE} teikn.`);
         return;
     }
 
@@ -410,30 +410,6 @@ async function sendQuestion() {
 
 let messageCounter = 0;
 
-function addMessage(type, text) {
-    const messages = document.getElementById("chatMessages");
-    const welcome = messages.querySelector(".chat-welcome");
-    if (welcome) welcome.style.display = "none";
-
-    const id = "msg-" + (++messageCounter);
-    const bubble = document.createElement("div");
-    bubble.className = "chat-bubble chat-" + type;
-    bubble.id = id;
-    bubble.innerHTML = '<div class="chat-bubble-content">' + escapeHtml(text) + '</div>';
-    messages.appendChild(bubble);
-    messages.scrollTop = messages.scrollHeight;
-    return id;
-}
-
-function updateMessage(id, text) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.querySelector(".chat-bubble-content").innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
-    }
-    const messages = document.getElementById("chatMessages");
-    messages.scrollTop = messages.scrollHeight;
-}
-
 function escapeHtml(str) {
     const div = document.createElement("div");
     div.textContent = str;
@@ -565,27 +541,7 @@ async function addTema() {
 }
 
 function openNyChatModal() {
-    currentSessionId = null;
-    isWaitingForReflection = false;
-
-    document.getElementById("question").disabled = false;
-    document.getElementById("sendBtn").disabled = false;
-
-    document.getElementById("emneSelect").value = "";
-    document.getElementById("temaSelect").innerHTML = '<option value="">Tema</option>';
-    document.getElementById("question").value = "";
-
-    updateSelectedContext();
-    history.replaceState({}, "", window.location.pathname);
-
-    const messages = document.getElementById("chatMessages");
-    messages.innerHTML = `
-        <div class="chat-welcome">
-            <p class="sp-hint">
-                Velg emne og tema og still spørsmålet ditt for å komme i gang
-            </p>
-        </div>
-    `;
+    window.location.href = "/sporsmal";
 }
 
 function toggleSidebar() {
@@ -597,8 +553,8 @@ function initTempChat() {
     const emneSelect = document.getElementById("emneSelect");
     const temaSelect = document.getElementById("temaSelect");
 
-    if (emneSelect) emneSelect.style.display = "none";
-    if (temaSelect) temaSelect.style.display = "none";
+    if (emneSelect) emneSelect.classList.add("hidden");
+    if (temaSelect) temaSelect.classList.add("hidden");
 
     const messages = document.getElementById("chatMessages");
     messages.innerHTML = `
@@ -617,11 +573,18 @@ document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
 });
 
 window.onload = function () {
+    const emneSelect = document.getElementById("emneSelect");
+    const temaSelect = document.getElementById("temaSelect");
+
+    // 🔥 ALLTID fjern hidden først
+    if (emneSelect) emneSelect.classList.remove("hidden");
+    if (temaSelect) temaSelect.classList.remove("hidden");
+
     if (isTempChat) {
         initTempChat();
-    } else {
-        loadEmner();
     }
+
+    loadEmner();
 };
 
 function addUserMessage(text) {
@@ -693,19 +656,6 @@ async function loadAllTema() {
             temaMap[emne.emneId] = [];
         }
     }
-}
-
-function parseVurdering(text) {
-    const match = text.match(/RATING:\s*(\d)/i);
-
-    let rating = null;
-
-    if (match) {
-        rating = parseInt(match[1]);
-        text = text.replace(/RATING:\s*\d/i, "").trim();
-    }
-
-    return { tekst: text, rating };
 }
 
 function renderClickableStars() {
