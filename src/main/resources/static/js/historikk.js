@@ -89,80 +89,9 @@ function filterHistory() {
     });
 }
 
-// ── Sidebar ──
-function renderSidebar() {
-    var list = document.getElementById("sidebarEmneList");
-    list.innerHTML = "";
-
-    subjects.forEach(function(subject, index) {
-        var item = document.createElement("div");
-        item.className = "sp-emne-item";
-
-        var header = document.createElement("div");
-        header.className = "sp-emne-header";
-        header.onclick = function() { toggleEmne(index); };
-
-        header.innerHTML =
-            '<span class="sp-emne-dot"></span>' +
-            '<span class="sp-emne-name">' + subject.name + '</span>' +
-            '<span class="sp-emne-arrow" id="arrow-' + index + '">∨</span>';
-        item.appendChild(header);
-
-        var topics = document.createElement("div");
-        topics.className = "sp-emne-topics";
-        topics.id = "topics-" + index;
-
-        if (subject.topics && subject.topics.length > 0) {
-            subject.topics.forEach(function(topic) {
-                var link = document.createElement("a");
-                link.href = "/sporsmal?subject=" + encodeURIComponent(subject.name) + "&topic=" + encodeURIComponent(topic);
-                link.className = "sp-topic-link";
-                link.textContent = topic;
-                topics.appendChild(link);
-            });
-        }
-
-        item.appendChild(topics);
-        list.appendChild(item);
-    });
-}
-
-function toggleEmne(index) {
-    var topics = document.getElementById("topics-" + index);
-    var arrow = document.getElementById("arrow-" + index);
-    if (topics.classList.contains("open")) {
-        topics.classList.remove("open");
-        arrow.textContent = "∨";
-    } else {
-        topics.classList.add("open");
-        arrow.textContent = "∧";
-    }
-}
-
-// ── Modals ──
-function openNyttEmneModal() {
-    document.getElementById("nyttEmneModal").classList.add("active");
-}
-function closeNyttEmneModal() {
-    document.getElementById("nyttEmneModal").classList.remove("active");
-}
-function addEmne() {
-    var name = document.getElementById("modalEmneName2").value.trim();
-    var desc = document.getElementById("modalEmneDesc2").value.trim();
-    if (!name) return;
-    subjects.push({ name: name, description: desc, topics: [] });
-    saveSubjects();
-    renderSidebar();
-    closeNyttEmneModal();
-    document.getElementById("modalEmneName2").value = "";
-    document.getElementById("modalEmneDesc2").value = "";
-}
-
-function toggleSidebar() {
-    document.querySelector(".sp-sidebar").classList.toggle("open");
-    document.querySelector(".sidebar-overlay").classList.toggle("open");
-}
-
+window.onload = function() {
+    loadEmner();
+};
 
 document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
     overlay.addEventListener("click", function(e) {

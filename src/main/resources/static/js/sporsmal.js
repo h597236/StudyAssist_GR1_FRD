@@ -11,161 +11,27 @@ const params = new URLSearchParams(window.location.search);
 const isTempChat = params.get("temp") === "true";
 
 const emneIdFromUrl = params.get("emneId");
-const temaFromUrl = params.get("tema");
+const temaIdFromUrl = params.get("temaId");
 
 const brukarnavn = localStorage.getItem("brukarnavn") || "bruker@email.com";
-let activeEmneId = null;
-let emner = [];
-let temaMap = {};
 
 document.getElementById("sidebarBrukarnavn").textContent = brukarnavn;
 
-async function loadEmner() {
-    try {
-        const brukarID = localStorage.getItem("brukarId");
-        const res = await api(`emne/brukar/${brukarID}`);
-        if (!res.ok) throw new Error("Kunne ikkje hente emner");
-        emner = await res.json();
-
-        await loadAllTema();
-        renderSidebar();
-        renderDropdowns();
-
-        if (emneIdFromUrl) {
-            document.getElementById("emneSelect").value = emneIdFromUrl;
-            await updateTemaSelect();
-
-            if (temaFromUrl) {
-                const temaSelect = document.getElementById("temaSelect");
-
-                const interval = setInterval(() => {
-                    if (temaSelect.options.length > 1) {
-                        const temaListe = temaMap[emneIdFromUrl] || [];
-                        const match = temaListe.find(t => t.namn === temaFromUrl);
-
-                        if (match) {
-                            temaSelect.value = match.temaId;
-                        }
-                        updateSelectedContext();
-                        clearInterval(interval);
-
-                        // 🔥 viktig: først no er alt klart
-                        isInitializing = false;
-                        updateUrlFromDropdowns();
-                    }
-                }, 10);
-            } else {
-                isInitializing = false;
-            }
-            updateSelectedContext();
-        } else {
-            isInitializing = false;
-        }
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-function renderSidebar() {
-    const list = document.getElementById("sidebarEmneList");
-    list.innerHTML = "";
-
-    emner.forEach(function(emne) {
-        const item = document.createElement("div");
-        item.className = "sp-emne-item";
-
-        const header = document.createElement("div");
-        header.className = "sp-emne-header";
-        header.onclick = function() {
-            toggleEmne(emne.emneId);
-        };
-
-        const dot = document.createElement("span");
-        dot.className = "sp-emne-dot";
-
-        const name = document.createElement("span");
-        name.className = "sp-emne-name";
-        name.textContent = emne.namn;
-
-        const arrow = document.createElement("span");
-        arrow.className = "sp-emne-arrow";
-        arrow.id = "arrow-" + emne.emneId;
-        arrow.textContent = "∨";
-
-        header.appendChild(dot);
-        header.appendChild(name);
-        header.appendChild(arrow);
-        item.appendChild(header);
-
-        const topics = document.createElement("div");
-        topics.className = "sp-emne-topics";
-        topics.id = "topics-" + emne.emneId;
-
-        const temaListe = temaMap[emne.emneId] || [];
-        temaListe.forEach(function(temaObj) {
-            const link = document.createElement("a");
-            link.href = "#";
-            link.className = "sp-topic-link";
-            link.textContent = temaObj.namn;
-            link.onclick = function(e) {
-                e.preventDefault();
-                selectEmneAndTema(emne.emneId, temaObj.namn);
-            };
-            topics.appendChild(link);
-        });
-
-        const addBtn = document.createElement("a");
-        addBtn.href = "#";
-        addBtn.className = "sp-topic-link sp-topic-add";
-        addBtn.innerHTML = "<span class='sp-sidebar-icon'>＋</span> Nytt tema";
-        addBtn.onclick = function(e) {
-            e.preventDefault();
-            openNyttTemaModal(emne.emneId, emne.namn);
-        };
-        topics.appendChild(addBtn);
-
-        item.appendChild(topics);
-        list.appendChild(item);
-    });
-}
-
-async function toggleEmne(emneId) {
-    const topics = document.getElementById("topics-" + emneId);
-    const arrow = document.getElementById("arrow-" + emneId);
-
-    if (!temaMap[emneId]) {
-        try {
-            const res = await api(`tema/emne/${emneId}`);
-            if (!res.ok) throw new Error("Kunne ikkje hente tema");
-            temaMap[emneId] = await res.json();
-            renderSidebar();
-        } catch (error) {
-            console.error(error);
-            alert("Feil ved henting av tema");
-            return;
-        }
-    }
-
-    const updatedTopics = document.getElementById("topics-" + emneId);
-    const updatedArrow = document.getElementById("arrow-" + emneId);
-
-    if (updatedTopics.classList.contains("open")) {
-        updatedTopics.classList.remove("open");
-        updatedArrow.textContent = "∨";
-    } else {
-        updatedTopics.classList.add("open");
-        updatedArrow.textContent = "∧";
-    }
-}
-
-function selectEmneAndTema(emneId, temaNamn) {
+function selectEmneAndTema(emneId, temaId) {
     const emneSelect = document.getElementById("emneSelect");
     const temaSelect = document.getElementById("temaSelect");
 
-    emneSelect.value = emneId;
+    emneSelect.value = String(emneId);
+
     updateTemaSelect().then(function() {
-        temaSelect.value = temaNamn;
+        temaSelect.value = String(temaId);
         updateSelectedContext();
+
+        if (isTempChat) {
+            window.location.href = `/sporsmal?emneId=${emneId}&temaId=${temaId}`;
+            return;
+        }
+
         updateUrlFromDropdowns();
     });
 }
@@ -241,17 +107,14 @@ function updateSelectedContext() {
 }
 
 function updateUrlFromDropdowns() {
-    if (isTempChat || isInitializing) return;
+    if (isInitializing) return;
 
     const emneId = document.getElementById("emneSelect").value;
-    const temaSelect = document.getElementById("temaSelect");
-    const temaId = temaSelect.value;
-    const temaNavn = temaSelect.options[temaSelect.selectedIndex]?.text;
+    const temaId = document.getElementById("temaSelect").value;
     const newParams = new URLSearchParams();
 
     if (emneId) newParams.set("emneId", emneId);
     if (temaId) newParams.set("temaId", temaId);
-    if (temaNavn) newParams.set("tema", temaNavn);
 
     const queryString = newParams.toString();
     const newUrl = queryString
@@ -430,123 +293,8 @@ function autoResizeTextarea() {
     textarea.style.height = Math.min(textarea.scrollHeight, 150) + "px";
 }
 
-function openNyttEmneModal() {
-    document.getElementById("nyttEmneModal").classList.add("active");
-}
-
-function closeNyttEmneModal() {
-    document.getElementById("nyttEmneModal").classList.remove("active");
-}
-
-async function addEmne() {
-    const brukarId = localStorage.getItem("brukarId");
-    const name = document.getElementById("modalEmneName2").value.trim();
-    const desc = document.getElementById("modalEmneDesc2").value.trim();
-    if (!name) return;
-
-    try {
-        const response = await api("emne", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                namn: name,
-                beskrivelse: desc,
-                brukar: {
-                    id: brukarId
-                }
-            })
-        });
-
-        if (!response.ok) {
-            const msg = await response.text();
-            throw new Error(msg || "Feil ved lagring av emne");
-        }
-
-        const nyttEmne = await response.json();
-        document.getElementById("modalEmneName2").value = "";
-        document.getElementById("modalEmneDesc2").value = "";
-        closeNyttEmneModal();
-
-        await loadEmner();
-        document.getElementById("emneSelect").value = nyttEmne.emneId;
-        await updateTemaSelect();
-        updateSelectedContext();
-        updateUrlFromDropdowns();
-    } catch (error) {
-        console.error(error);
-        alert("Feil ved lagring av emne");
-    }
-}
-
-function openNyttTemaModal(emneId, emneNamn) {
-    activeEmneId = emneId;
-    document.getElementById("nyttTemaTitle").textContent = emneNamn + " – Nytt tema";
-    document.getElementById("nyttTemaModal").classList.add("active");
-}
-
-function closeNyttTemaModal() {
-    document.getElementById("nyttTemaModal").classList.remove("active");
-    document.getElementById("modalTemaName").value = "";
-}
-
-async function addTema() {
-    const name = document.getElementById("modalTemaName").value.trim();
-    if (!name || activeEmneId === null) return;
-
-    try {
-        const response = await api("tema", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                namn: name,
-                emne: {
-                    emneId: activeEmneId
-                }
-            })
-        });
-
-        if (!response.ok) {
-            const msg = await response.text();
-            throw new Error(msg || "Feil ved lagring av tema");
-        }
-
-        document.getElementById("modalTemaName").value = "";
-        closeNyttTemaModal();
-
-        temaMap[activeEmneId] = null;
-
-        const res = await api(`tema/emne/${activeEmneId}`);
-        temaMap[activeEmneId] = await res.json();
-
-        renderSidebar();
-
-        const topics = document.getElementById("topics-" + activeEmneId);
-        const arrow = document.getElementById("arrow-" + activeEmneId);
-
-        if (topics) {
-            topics.classList.add("open");
-            arrow.textContent = "∧";
-        }
-
-        document.getElementById("emneSelect").value = activeEmneId;
-        await updateTemaSelect();
-        document.getElementById("temaSelect").value = name;
-        updateSelectedContext();
-        updateUrlFromDropdowns();
-
-    } catch (error) {
-        console.error(error);
-        alert("Feil ved lagring av tema");
-    }
-}
-
 function openNyChatModal() {
     window.location.href = "/sporsmal";
-}
-
-function toggleSidebar() {
-    document.querySelector(".sp-sidebar").classList.toggle("open");
-    document.querySelector(".sidebar-overlay").classList.toggle("open");
 }
 
 function initTempChat() {
@@ -576,7 +324,6 @@ window.onload = function () {
     const emneSelect = document.getElementById("emneSelect");
     const temaSelect = document.getElementById("temaSelect");
 
-    // 🔥 ALLTID fjern hidden først
     if (emneSelect) emneSelect.classList.remove("hidden");
     if (temaSelect) temaSelect.classList.remove("hidden");
 
@@ -586,6 +333,10 @@ window.onload = function () {
 
     loadEmner();
 };
+
+window.onTemaSelected = function(emneId, temaId) {
+    selectedEmneAndTema(emneId, temaId);
+}
 
 function addUserMessage(text) {
     const chat = document.getElementById("chatMessages");
@@ -640,22 +391,6 @@ function addThinkingMessage() {
 function removeThinkingMessage() {
     const el = document.getElementById("thinkingBubble");
     if (el) el.remove();
-}
-
-async function loadAllTema() {
-    for (const emne of emner) {
-        try {
-            const res = await api(`tema/emne/${emne.emneId}`);
-            if (res.ok) {
-                temaMap[emne.emneId] = await res.json();
-            } else {
-                temaMap[emne.emneId] = [];
-            }
-        } catch (e) {
-            console.error(e);
-            temaMap[emne.emneId] = [];
-        }
-    }
 }
 
 function renderClickableStars() {

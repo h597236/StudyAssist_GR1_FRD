@@ -1,10 +1,5 @@
 requireLogin();
 
-// ── Data ──
-let sporsmalCount = parseInt(localStorage.getItem("sporsmalCount")) || 0;
-let selectedSubjectIndex = null;
-let activeEmneId = null;
-
 // ── Display username ──
 const brukarnavn = localStorage.getItem("brukarnavn") || "bruker";
 document.getElementById("navBrukarnavn").textContent = brukarnavn;
@@ -68,7 +63,7 @@ async function addSubject() {
         window.selectedEmneId = emne.emneId;
 
         closeNewEmneModal();
-        await loadEmner();
+        await loadEmnerIndex();
         await loadStats();
         // open tema modal after creating emne
         openTemaModal(emne.emneId);
@@ -177,7 +172,7 @@ async function addTemaFromModal() {
     }
 }
 
-async function loadEmner() {
+async function loadEmnerIndex() {
     const brukarID = localStorage.getItem("brukarId");
 
     const res = await api(`emne/brukar/${brukarID}`);
@@ -310,7 +305,7 @@ async function confirmDeleteEmne() {
         }
 
         closeDeleteModal();
-        await loadEmner();
+        await loadEmnerIndex();
         await loadStats();
 
     } catch (error) {
@@ -321,11 +316,11 @@ async function confirmDeleteEmne() {
 
 // ── Init ──
 window.onload = async function() {
-    await loadEmner();
+    await loadEmnerIndex();
     await loadStats();
 };
 
 window.addEventListener("pageshow", async function(event) {
-    await loadEmner();
+    await loadEmnerIndex();
     await loadStats();
 });
