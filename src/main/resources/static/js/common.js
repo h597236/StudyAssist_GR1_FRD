@@ -66,8 +66,9 @@ async function loadEmner() {
         renderSidebar();
         if (typeof renderDropdowns === "function") renderDropdowns();
 
-        if (typeof emneIdFromUrl !== "undefined" && emneIdFromUrl) {
-            document.getElementById("emneSelect").value = emneIdFromUrl;
+        const emneSelectEl = document.getElementById("emneSelect");
+        if (typeof emneIdFromUrl !== "undefined" && emneIdFromUrl && emneSelectEl) {
+            emneSelectEl.value = emneIdFromUrl;
             await updateTemaSelect();
 
             if (temaIdFromUrl) {
@@ -200,6 +201,8 @@ async function loadAllTema() {
 }
 
 function openNyttEmneModal() {
+    document.getElementById("modalEmneName2").value = "";
+    document.getElementById("modalEmneDesc2").value = "";
     document.getElementById("nyttEmneModal").classList.add("active");
 }
 
@@ -237,10 +240,13 @@ async function addEmne() {
         closeNyttEmneModal();
 
         await loadEmner();
-        document.getElementById("emneSelect").value = nyttEmne.emneId;
-        await updateTemaSelect();
-        updateSelectedContext();
-        updateUrlFromDropdowns();
+        const emneSelect = document.getElementById("emneSelect");
+        if (emneSelect) {
+            emneSelect.value = nyttEmne.emneId;
+            await updateTemaSelect();
+            updateSelectedContext();
+            updateUrlFromDropdowns();
+        }
     } catch (error) {
         console.error(error);
         alert("Feil ved lagring av emne");

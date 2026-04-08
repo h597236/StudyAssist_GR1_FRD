@@ -65,6 +65,8 @@ async function addSubject() {
         closeNewEmneModal();
         await loadEmnerIndex();
         await loadStats();
+        document.getElementById("modalEmneName").value = "";
+        document.getElementById("modalEmneDesc").value = "";
         // open tema modal after creating emne
         openTemaModal(emne.emneId);
 

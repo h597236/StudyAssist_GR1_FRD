@@ -8,4 +8,5 @@ import java.util.List;
 public interface SporsmalRepository extends JpaRepository<SporsmalSession, Long> {
     List<SporsmalSession> findByBrukarId(int brukarId);
     long countByBrukarId(int brukarId);
+    void deleteByTemaTemaId(int temaId);
 }
