@@ -1162,8 +1162,14 @@ body {
   z-index: 40;
 }
 
+  
 /* ── Responsive: Tablet ── */
 @media (max-width: 900px) {
+
+  .hist-content {
+    padding-top: 100px;
+  }
+
   .navbar {
     padding: 0 20px;
   }
@@ -1193,6 +1199,11 @@ body {
 
 /* ── Responsive: Mobile ── */
 @media (max-width: 600px) {
+
+
+  .sp-sidebar-fixed {
+    padding-top: 60px;
+  }
 
   /* ── Navbar mobile ── */
   .navbar {
@@ -1422,7 +1433,7 @@ body {
 
   /* ── Historikk mobile ── */
   .hist-content {
-    padding: 24px 14px 40px;
+    padding: 70px 14px 40px;
   }
 
   .hist-header h1 {

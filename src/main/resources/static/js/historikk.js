@@ -237,6 +237,11 @@ document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
     });
 });
 
+function toggleSidebar() {
+    document.querySelector(".sp-sidebar").classList.toggle("open");
+    document.querySelector(".sidebar-overlay").classList.toggle("open");
+}
+
 renderSidebar();
 renderFilterChips();
 filterHistory();

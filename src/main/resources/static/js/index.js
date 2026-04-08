@@ -326,3 +326,48 @@ window.addEventListener("pageshow", async function(event) {
     await loadEmnerIndex();
     await loadStats();
 });
+
+
+// ── Delete Tema (with confirmation modal) ──
+let pendingDeleteTemaId = null;
+
+function openDeleteTemaModal() {
+    const select = document.getElementById("temaSelect");
+    const selectedOption = select.options[select.selectedIndex];
+
+    if (!selectedOption || !selectedOption.value) {
+        alert("Vel eit tema å slette først.");
+        return;
+    }
+
+    pendingDeleteTemaId = selectedOption.value;
+    document.getElementById("deleteTemaName").textContent = selectedOption.textContent;
+    document.getElementById("deleteTemaModal").classList.add("active");
+}
+
+function closeDeleteTemaModal() {
+    pendingDeleteTemaId = null;
+    document.getElementById("deleteTemaModal").classList.remove("active");
+}
+
+async function confirmDeleteTema() {
+    if (!pendingDeleteTemaId) return;
+
+    try {
+        const res = await api("tema/" + pendingDeleteTemaId, {
+            method: "DELETE"
+        });
+
+        if (!res.ok) {
+            throw new Error("Sletting feila");
+        }
+
+        closeDeleteTemaModal();
+        await openTemaModal(window.selectedEmneId);
+        await loadStats();
+
+    } catch (error) {
+        console.error("Delete tema error:", error);
+        alert("Kunne ikkje slette temaet. Prøv igjen.");
+    }
+}

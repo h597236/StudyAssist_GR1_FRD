@@ -61,4 +61,24 @@ public class TemaController {
 
         return ResponseEntity.ok(temaService.findByEmneId(emneId));
     }
+
+    @DeleteMapping("/{temaId}")
+        public ResponseEntity<?> delete(@PathVariable int temaId, HttpSession session) {
+            Brukar brukar = SessionUtil.getLoggedInBrukar(session, brukarService);
+            if (brukar == null) {
+                return ResponseEntity.status(401).body("Ikkje logga inn.");
+            }
+
+            Tema tema = temaService.findById(temaId);
+            if (tema == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            if (!temaService.eigesAvBrukar(tema.getEmne().getEmneId(), brukar.getId())) {
+                return ResponseEntity.status(403).body("Du har ikkje tilgang til dette temaet.");
+            }
+
+            temaService.deleteById(temaId);
+            return ResponseEntity.noContent().build();
+        }
 }

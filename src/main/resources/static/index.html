@@ -102,6 +102,7 @@
         <input type="text" id="newTemaInput" placeholder="Skriv temanamn">
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeTemaModal()">Avbryt</button>
+            <button class="btn btn-danger" onclick="openDeleteTemaModal()">Slett tema</button>
             <button class="btn btn-secondary" onclick="addTemaFromModal()">Legg til tema</button>
             <button class="btn btn-primary" onclick="goToQuestionPage()">Gå vidare</button>
         </div>
@@ -118,6 +119,20 @@
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeDeleteModal()">Avbryt</button>
             <button class="btn btn-danger" onclick="confirmDeleteEmne()">Slett emne</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Bekreft sletting av tema -->
+<div class="modal-overlay" id="deleteTemaModal">
+    <div class="modal">
+        <h3>Slette tema?</h3>
+        <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 20px;">
+            Er du sikker på at du vil slette <strong id="deleteTemaName"></strong>? Alle spørsmål knytt til temaet vert sletta permanent.
+        </p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeDeleteTemaModal()">Avbryt</button>
+            <button class="btn btn-danger" onclick="confirmDeleteTema()">Slett tema</button>
         </div>
     </div>
 </div>
