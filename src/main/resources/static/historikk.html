@@ -104,6 +104,55 @@
     </div>
 </div>
 
+<!-- Modal: Historikk detalj -->
+<div class="modal-overlay" id="historikkModal">
+    <div class="modal modal-historikk">
+        <button class="modal-close-btn" onclick="closeHistorikkModal()">✕</button>
+
+        <div class="hist-modal-tags">
+            <span class="hist-tag" id="modalEmneTag"></span>
+            <span class="hist-tag hist-tag-tema" id="modalTemaTag"></span>
+            <span id="modalStateTag"></span>
+        </div>
+
+        <div class="hist-modal-date" id="modalDate"></div>
+
+        <div class="hist-modal-section">
+            <div class="hist-modal-label">Spørsmål</div>
+            <div class="hist-modal-text" id="modalSporsmal"></div>
+        </div>
+
+        <div class="hist-modal-section">
+            <div class="hist-modal-label">Oppfølgingsspørsmål frå KI</div>
+            <div class="hist-modal-text" id="modalOppfolging"></div>
+        </div>
+
+        <div class="hist-modal-section" id="modalRefleksjonSection">
+            <div class="hist-modal-label">Ditt svar</div>
+            <div class="hist-modal-text" id="modalRefleksjon"></div>
+        </div>
+
+        <div class="hist-modal-section" id="modalVurderingSection">
+            <div class="hist-modal-label">Vurdering frå KI</div>
+            <div class="hist-modal-text" id="modalVurdering"></div>
+        </div>
+
+        <div class="hist-modal-section" id="modalFasitSection">
+            <div class="hist-modal-label">Fasit</div>
+            <div class="hist-modal-text" id="modalFasit"></div>
+        </div>
+
+        <div class="hist-modal-rating" id="modalRating"></div>
+
+        <div class="hist-modal-actions">
+            <button class="btn btn-secondary" onclick="closeHistorikkModal()">Lukk</button>
+            <button class="btn btn-primary" id="modalContinueBtn" style="display:none;" onclick="fortsettChat()">
+                Fortsett chat →
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="js/common.js"></script>
 <script src="js/historikk.js"></script>
 <script>

@@ -1110,6 +1110,9 @@ body {
   margin-bottom: 8px;
   color: var(--text-primary);
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hist-card-answer {
@@ -1572,6 +1575,125 @@ body {
 
 .hidden {
   display: none !important;
+}
+
+/* ── Historikk: rating stars ── */
+.hist-rating {
+  display: flex;
+  gap: 2px;
+}
+
+.hist-star {
+  font-size: 0.9rem;
+  color: var(--border);
+}
+
+.hist-star.filled {
+  color: #e8a838;
+}
+
+.hist-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hist-state {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hist-state.completed {
+  background: #d4f0e0;
+  color: #1a7a45;
+}
+
+.hist-state.final {
+  background: #ddeeff;
+  color: #1a4a8a;
+}
+
+.hist-state.ongoing {
+  background: #fef3d0;
+  color: #8a5a00;
+}
+
+/* ── Historikk modal ── */
+.modal-historikk {
+  max-width: 620px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 32px;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.modal-close-btn:hover {
+  background: var(--border-light);
+  color: var(--text-primary);
+}
+
+.hist-modal-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.hist-modal-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.hist-modal-section {
+  margin-bottom: 20px;
+}
+
+.hist-modal-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.hist-modal-text {
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.hist-modal-rating {
+  margin-bottom: 24px;
+}
+
+.hist-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
 }
 
 

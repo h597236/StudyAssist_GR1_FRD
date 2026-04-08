@@ -5,25 +5,18 @@ let activeEmneId = null;
 function getBase() {
     const path = window.location.pathname;
 
-    // f.eks:
-    // /studyassist-gr1-frd/login  -> ["", "studyassist-gr1-frd", "login"]
-    // /login                     -> ["", "login"]
-
     const parts = path.split("/");
 
-    // Hvis vi er lokalt (ingen context path)
     if (parts.length <= 2) {
         return "";
     }
 
-    // Hvis vi er på TomEE (har context path)
     return "/" + parts[1];
 }
 
 async function api(path, options = {}) {
     const base = getBase();
 
-    // FIX: sørg for at path ikkje blir relative
     if (!path.startsWith("/")) {
         path = "/" + path;
     }
@@ -71,9 +64,9 @@ async function loadEmner() {
 
         await loadAllTema();
         renderSidebar();
-        renderDropdowns();
+        if (typeof renderDropdowns === "function") renderDropdowns();
 
-        if (emneIdFromUrl) {
+        if (typeof emneIdFromUrl !== "undefined" && emneIdFromUrl) {
             document.getElementById("emneSelect").value = emneIdFromUrl;
             await updateTemaSelect();
 
@@ -81,21 +74,20 @@ async function loadEmner() {
                 const temaSelect = document.getElementById("temaSelect");
                 const temaListe = temaMap[emneIdFromUrl] || [];
                 const match = temaListe.find(t => String(t.temaId) === String(temaIdFromUrl));
-
                 if (match) {
                     temaSelect.value = String(match.temaId);
                 }
             }
 
-            updateSelectedContext();
+            if (typeof updateSelectedContext === "function") updateSelectedContext();
         }
 
-        isInitializing = false;
-        updateUrlFromDropdowns();
+        if (typeof isInitializing !== "undefined") isInitializing = false;
+        if (typeof updateUrlFromDropdowns === "function") updateUrlFromDropdowns();
 
     } catch (error) {
         console.error(error);
-        isInitializing = false;
+        if (typeof isInitializing !== "undefined") isInitializing = false;
     }
 }
 
@@ -324,5 +316,3 @@ function toggleSidebar() {
     document.querySelector(".sp-sidebar").classList.toggle("open");
     document.querySelector(".sidebar-overlay").classList.toggle("open");
 }
-
-

@@ -2,7 +2,7 @@ let currentSessionId = null;
 let isInitializing = true;
 
 const MIN_SVAR_LENGDE = 10;
-let isWaitingForReflection = false;// endre til 100 seinare
+let isWaitingForReflection = false;
 let selectedRating = 0;
 
 requireLogin();
@@ -12,10 +12,40 @@ const isTempChat = params.get("temp") === "true";
 
 const emneIdFromUrl = params.get("emneId");
 const temaIdFromUrl = params.get("temaId");
+const sessionIdFromUrl = params.get("sessionId");
 
 const brukarnavn = localStorage.getItem("brukarnavn") || "bruker@email.com";
 
 document.getElementById("sidebarBrukarnavn").textContent = brukarnavn;
+
+// ── Gjenopprett pågåande session frå historikk ──
+async function gjenopprettSession(sessionId) {
+    try {
+        const res = await api("/api/historikk/" + sessionId);
+        if (!res.ok) throw new Error("Kunne ikkje hente session");
+        const data = await res.json();
+
+        currentSessionId = data.sessionId;
+
+        // Vis det originale spørsmålet
+        addUserMessage(data.startSporsmal);
+
+        // Vis oppfølgingsspørsmålet frå KI
+        if (data.oppfolgingsSporsmal) {
+            addAIMessage("🤔 Oppfølgingsspørsmål:\n" + data.oppfolgingsSporsmal);
+        }
+
+        // Viss state er FOLLOW_UP ventar vi på refleksjon frå brukar
+        if (data.state === "FOLLOW_UP" || data.state === "INITIAL") {
+            isWaitingForReflection = true;
+            addAIMessage("💬 Du har ein uferdig chat her. Skriv svaret ditt under for å halde fram.");
+        }
+
+    } catch (err) {
+        console.error(err);
+        addAIMessage("❌ Kunne ikkje laste tidlegare chat.");
+    }
+}
 
 function selectEmneAndTema(emneId, temaId) {
     const emneSelect = document.getElementById("emneSelect");
@@ -85,7 +115,7 @@ async function updateTemaSelect() {
 
 function updateSelectedContext() {
     const context = document.getElementById("selectedContext");
-    if (!context) return; // 🔥 viktig
+    if (!context) return;
 
     const emneSelect = document.getElementById("emneSelect");
     const temaSelect = document.getElementById("temaSelect");
@@ -135,7 +165,6 @@ async function sendQuestion() {
     const question = input.value.trim();
     if (!question) return;
 
-    // valider refleksjon
     if (isWaitingForReflection && question.length < MIN_SVAR_LENGDE) {
         addAIMessage(`❌ Du må skrive minst ${MIN_SVAR_LENGDE} teikn.`);
         return;
@@ -143,11 +172,11 @@ async function sendQuestion() {
 
     addUserMessage(question);
     input.value = "";
+    input.style.height = "auto";
     btn.disabled = true;
 
     addThinkingMessage();
 
-    //REFLEKSJON FLOW
     if (isWaitingForReflection) {
         try {
             const res = await api("api/sporsmal/refleksjon", {
@@ -162,22 +191,18 @@ async function sendQuestion() {
             const data = await res.json();
             removeThinkingMessage();
 
-            // ✅ vurdering
             if (data.vurdering) {
                 addAIMessage("✅ " + data.vurdering);
             }
 
-            // ✅ rating frå AI
             if (data.rating !== null && data.rating !== undefined) {
-                addAIMessage("⭐ " + renderStars(data.rating));
+                addAIMessageHTML("Din score: " + renderStars(data.rating));
             }
 
-            // ✅ fasit
             if (data.fasit) {
                 addAIMessage("📖 " + data.fasit);
             }
 
-            // ✅ vis bruker rating UI
             showUserRatingUI();
 
             currentSessionId = null;
@@ -205,7 +230,6 @@ async function sendQuestion() {
             });
 
             const data = await res.json();
-
             removeThinkingMessage();
 
             if (data.explanation) {
@@ -225,7 +249,6 @@ async function sendQuestion() {
         return;
     }
 
-    //START NY SESSION
     try {
         const temaIdRaw = document.getElementById("temaSelect").value;
 
@@ -320,7 +343,7 @@ document.querySelectorAll(".modal-overlay").forEach(function(overlay) {
     });
 });
 
-window.onload = function () {
+window.onload = async function () {
     const emneSelect = document.getElementById("emneSelect");
     const temaSelect = document.getElementById("temaSelect");
 
@@ -331,7 +354,12 @@ window.onload = function () {
         initTempChat();
     }
 
-    loadEmner();
+    await loadEmner();
+
+    // Viss vi kjem frå historikk med ein pågåande session
+    if (sessionIdFromUrl) {
+        await gjenopprettSession(sessionIdFromUrl);
+    }
 };
 
 window.onTemaSelected = function(emneId, temaId) {
@@ -366,6 +394,20 @@ function addAIMessage(text) {
     scrollToBottom();
 }
 
+function addAIMessageHTML(html) {
+    const chat = document.getElementById("chatMessages");
+
+    const welcome = document.querySelector(".chat-welcome");
+    if (welcome) welcome.remove();
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-ai";
+    div.innerHTML = `<div class="chat-bubble-content">${html}</div>`;
+
+    chat.appendChild(div);
+    scrollToBottom();
+}
+
 function scrollToBottom() {
     const chat = document.getElementById("chatMessages");
     chat.scrollTop = chat.scrollHeight;
@@ -395,11 +437,18 @@ function removeThinkingMessage() {
 
 function renderClickableStars() {
     let stars = "";
-
     for (let i = 1; i <= 5; i++) {
         stars += `<span class="star" data-value="${i}">☆</span>`;
     }
+    return stars;
+}
 
+function renderStars(rating) {
+    let stars = '<span style="display:inline-flex; gap:2px;">';
+    for (let i = 1; i <= 5; i++) {
+        stars += `<span style="color: ${i <= rating ? "#e8a838" : "#ccc"}; font-size:1rem;">★</span>`;
+    }
+    stars += '</span>';
     return stars;
 }
 
@@ -423,21 +472,18 @@ function showUserRatingUI() {
     const stars = div.querySelectorAll(".star");
 
     stars.forEach(star => {
-
         star.addEventListener("mouseover", function () {
             const rating = parseInt(star.dataset.value);
             highlightStars(div, rating);
         });
 
         star.addEventListener("mouseout", function () {
-            highlightStars(div, selectedRating); // 👈 behold valgt
+            highlightStars(div, selectedRating);
         });
 
         star.addEventListener("click", function () {
             selectedRating = parseInt(star.dataset.value);
-
             highlightStars(div, selectedRating);
-
             showEndChatUI();
         });
     });
@@ -459,14 +505,6 @@ function highlightStars(container, rating) {
     });
 }
 
-function renderStars(rating) {
-    let stars = "";
-    for (let i = 1; i <= 5; i++) {
-        stars += i <= rating ? "⭐" : "☆";
-    }
-    return stars;
-}
-
 function showEndChatUI() {
     const chat = document.getElementById("chatMessages");
 
@@ -484,11 +522,9 @@ function showEndChatUI() {
 
     div.querySelector("button").onclick = openNyChatModal;
 
-    // 🔥 disable input
     document.getElementById("question").disabled = true;
     document.getElementById("sendBtn").disabled = true;
 
-    // 🔥 reset session
     currentSessionId = null;
     isWaitingForReflection = false;
 
