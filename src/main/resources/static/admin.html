@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brukarar – StudyAssist Admin</title>
+    <link rel="icon" type="image/x-icon" href="/img/maskott.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="/home" class="navbar-brand">
+        <img src="img/logo1.png" alt="Logo" class="navbar-logo">
+    </a>
+    <ul class="navbar-links">
+        <li><a href="/admin" class="active">Brukarar</a></li>
+        <li><a href="/admin-prompt">Prompt</a></li>
+    </ul>
+    <div class="navbar-user">
+        <span id="brukarnamn"></span>
+        <button class="btn-logout" onclick="loggUt()">Logg ut</button>
+    </div>
+</nav>
+
+<div class="admin-layout">
+    <p class="admin-label">Admin panel</p>
+    <h1 class="admin-page-title">Brukarar</h1>
+    <p class="admin-page-subtitle">Administrer brukarar, endre rollar og slett kontoar.</p>
+
+    <div class="admin-filters">
+        <input
+                type="text"
+                id="sokEmail"
+                class="admin-search-input"
+                placeholder="Søk på epost..."
+                oninput="debouncedSok()"
+        />
+        <select id="filterRolle" class="admin-role-select" onchange="lastBrukarar()">
+            <option value="">Alle roller</option>
+            <option value="STUDENT">Student</option>
+            <option value="ADMIN">Admin</option>
+        </select>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+            <tr>
+                <th>Epost</th>
+                <th>Rolle</th>
+                <th>Handlingar</th>
+            </tr>
+            </thead>
+            <tbody id="brukarTbody">
+            <tr><td colspan="3" class="admin-table-empty">Lastar...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p id="totalLabel" class="prompt-meta" style="margin-top: 10px;"></p>
+</div>
+
+<!-- Modal: Endre rolle -->
+<div class="modal-overlay" id="endreRolleModal">
+    <div class="modal">
+        <h3>Endre rolle</h3>
+        <label for="nyRolleSelect">Vel ny rolle:</label>
+        <select id="nyRolleSelect">
+            <option value="STUDENT">Student</option>
+            <option value="ADMIN">Admin</option>
+        </select>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="lukkModal()">Avbryt</button>
+            <button class="btn btn-primary" onclick="lagreRolle()">Lagre</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/common.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

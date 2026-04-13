@@ -18,7 +18,13 @@ async function loggInn() {
             var user = await response.json();
             localStorage.setItem("brukarId", user.id);
             localStorage.setItem("brukarnavn", user.email);
-            window.location.href = getBase() + "/home";
+            localStorage.setItem("rolle", user.rolle || "STUDENT");
+
+            if (user.rolle && user.rolle.toUpperCase() === "ADMIN") {
+                window.location.href = getBase() + "/admin";
+            } else {
+                window.location.href = getBase() + "/home";
+            }
         } else {
             showMelding("Feil brukarnamn eller passord.", "red");
         }

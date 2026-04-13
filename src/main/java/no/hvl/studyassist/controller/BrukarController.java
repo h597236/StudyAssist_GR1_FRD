@@ -26,10 +26,7 @@ public class BrukarController {
 
         if (email == null || email.isBlank() ||
                 passord == null || passord.isBlank()) {
-
-            return ResponseEntity
-                    .badRequest()
-                    .body("Email og passord må fyllast ut.");
+            return ResponseEntity.badRequest().body("Email og passord må fyllast ut.");
         }
 
         if (brukarService.finnes(email)) {
@@ -50,10 +47,7 @@ public class BrukarController {
 
         if (email == null || email.isBlank() ||
                 passord == null || passord.isBlank()) {
-
-            return ResponseEntity
-                    .badRequest()
-                    .body("Email og passord må fyllast ut.");
+            return ResponseEntity.badRequest().body("Email og passord må fyllast ut.");
         }
 
         Brukar brukar = brukarService.loggInn(email, passord);
@@ -64,13 +58,15 @@ public class BrukarController {
 
             return ResponseEntity.ok(Map.of(
                     "id", brukar.getId(),
-                    "email", brukar.getEmail()
+                    "email", brukar.getEmail(),
+                    "rolle", brukar.getRolle() != null ? brukar.getRolle() : "STUDENT"
             ));
         } else {
             return ResponseEntity.status(401).body("Feil email eller passord.");
         }
     }
 
+    // Now also returns rolle — needed for admin check in frontend
     @GetMapping("/me")
     public ResponseEntity<?> me(HttpSession session) {
         Brukar brukar = SessionUtil.getLoggedInBrukar(session, brukarService);
@@ -81,7 +77,8 @@ public class BrukarController {
 
         return ResponseEntity.ok(Map.of(
                 "id", brukar.getId(),
-                "email", brukar.getEmail()
+                "email", brukar.getEmail(),
+                "rolle", brukar.getRolle() != null ? brukar.getRolle() : "STUDENT"
         ));
     }
 
