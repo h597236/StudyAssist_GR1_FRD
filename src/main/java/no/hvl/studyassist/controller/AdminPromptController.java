@@ -75,4 +75,13 @@ public class AdminPromptController {
         AdminPrompt lagra = adminPromptService.gjenopprett(id, brukar);
         return ResponseEntity.ok(lagra);
     }
+
+    @PostMapping("/{id}/settaktiv")
+    public ResponseEntity<?> settAktiv(@PathVariable Long id, HttpSession session) {
+        Brukar brukar = SessionUtil.getLoggedInBrukar(session, brukarService);
+        if (brukar == null) return ResponseEntity.status(401).body("Ikkje logga inn.");
+
+        AdminPrompt lagra = adminPromptService.settAktiv(id);
+        return ResponseEntity.ok(lagra);
+    }
 }

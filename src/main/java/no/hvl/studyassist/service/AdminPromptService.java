@@ -60,4 +60,20 @@ public class AdminPromptService {
                 .orElseThrow(() -> new RuntimeException("Prompt finst ikkje"));
         return lagreNyVersjon(gamal.getNokkel(), gamal.getInnhald(), admin);
     }
+
+    @Transactional
+    public AdminPrompt settAktiv(Long id) {
+        AdminPrompt prompt = adminPromptRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Prompt finst ikkje"));
+
+        // Set alle for same nokkel til inaktive
+        List<AdminPrompt> versjonar = adminPromptRepository
+                .findByNokkelOrderByVersjonAsc(prompt.getNokkel());
+        versjonar.forEach(v -> v.setErAktiv(false));
+        adminPromptRepository.saveAll(versjonar);
+
+        // Set den valte til aktiv
+        prompt.setErAktiv(true);
+        return adminPromptRepository.save(prompt);
+    }
 }

@@ -1731,5 +1731,46 @@ body {
   border-top: 1px solid var(--border-light);
 }
 
+/* ── Admin Prompt Side ── */
+.admin-layout { max-width: 1000px; margin: 0 auto; padding: 48px 32px; }
+.admin-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.admin-page-title { font-family: var(--font-display); font-size: 2rem; font-weight: 700; margin-bottom: 6px; }
+.admin-page-subtitle { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 28px; }
+
+.tab-row { display: flex; gap: 4px; margin-bottom: 0; border-bottom: 1px solid var(--border); }
+.tab-btn { padding: 10px 20px; font-size: 0.88rem; font-family: var(--font-body); font-weight: 500; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--text-muted); transition: color 0.2s, border-color 0.2s; margin-bottom: -1px; }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.prompt-grid { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; margin-top: 32px; }
+.prompt-editor-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm); }
+.prompt-editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.prompt-editor-header span { font-size: 0.82rem; color: var(--text-muted); }
+.prompt-textarea { width: 100%; min-height: 280px; padding: 16px; font-size: 0.92rem; font-family: var(--font-body); border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text-primary); resize: vertical; outline: none; transition: border-color 0.2s; line-height: 1.6; }
+.prompt-textarea:focus { border-color: var(--accent); }
+.prompt-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 14px; margin-bottom: 18px; }
+.prompt-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+.version-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+.version-card h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 600; margin-bottom: 18px; }
+.version-list { display: flex; flex-direction: column; gap: 10px; }
+.version-item { padding: 12px 14px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg); }
+.version-item.aktiv { border-color: var(--accent); background: #f0fafd; }
+.version-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.version-label { font-size: 0.82rem; font-weight: 600; }
+.version-aktiv-badge { font-size: 0.68rem; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+.version-date { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; }
+.version-btns { display: flex; gap: 6px; }
+.btn-xs { padding: 4px 12px; font-size: 0.78rem; border-radius: 6px; }
+
+.test-modal { max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto; }
+.test-input-group { margin-bottom: 14px; }
+.test-input-group label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; font-family: monospace; background: var(--bg); padding: 2px 8px; border-radius: 4px; display: inline-block; }
+.test-input-group input { width: 100%; padding: 10px 14px; font-size: 0.9rem; font-family: var(--font-body); border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text-primary); outline: none; transition: border-color 0.2s; margin-top: 4px; }
+.test-input-group input:focus { border-color: var(--accent); }
+.test-result-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; font-size: 0.88rem; line-height: 1.65; white-space: pre-wrap; color: var(--text-primary); margin-top: 6px; max-height: 200px; overflow-y: auto; }
+.test-ai-result { background: var(--bg-card); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 16px; font-size: 0.88rem; line-height: 1.65; color: var(--text-primary); margin-top: 12px; white-space: pre-wrap; }
+.test-section-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 6px; margin-top: 18px; }
+.modal-actions-top { margin-top: 20px; }
+.ai-svar-note { font-size: 0.7rem; color: var(--text-muted); }
 
 
