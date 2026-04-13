@@ -18,7 +18,7 @@ async function loggInn() {
             var user = await response.json();
             localStorage.setItem("brukarId", user.id);
             localStorage.setItem("brukarnavn", user.email);
-            localStorage.setItem("rolle", user.rolle || "STUDENT");
+            localStorage.setItem("rolle", user.rolle || "VANLIG");
 
             if (user.rolle && user.rolle.toUpperCase() === "ADMIN") {
                 window.location.href = getBase() + "/admin";

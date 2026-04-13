@@ -1870,7 +1870,7 @@ body {
     letter-spacing: 0.03em;
 }
 
-.rolle-student {
+.rolle-vanlig {
     background: var(--border-light);
     color: var(--text-secondary);
 }

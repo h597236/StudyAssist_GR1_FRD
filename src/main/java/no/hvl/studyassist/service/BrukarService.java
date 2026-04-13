@@ -19,6 +19,7 @@ public class BrukarService {
         Brukar brukar = new Brukar();
         brukar.setEmail(email);
         brukar.setPassord(passwordEncoder.encode(passord));
+        brukar.setRolle("VANLIG");
         return brukarRepository.save(brukar);
     }
 

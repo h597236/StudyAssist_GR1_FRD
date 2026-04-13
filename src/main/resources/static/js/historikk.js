@@ -1,4 +1,4 @@
-requireLogin();
+requireVanlig();
 
 // ── Data ──
 var brukarnavn = localStorage.getItem("brukarnavn") || "bruker@email.com";

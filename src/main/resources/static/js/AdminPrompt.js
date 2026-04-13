@@ -17,6 +17,22 @@ const KJENTE_PLASSHALDERAR = {
     }
 };
 
+async function sjekkAdmin() {
+    try {
+        const res = await api('api/brukar/me');
+        if (!res.ok) {
+            window.location.href = getBase() + '/login';
+            return;
+        }
+        const brukar = await res.json();
+        if (brukar.rolle?.toUpperCase() !== 'ADMIN') {
+            window.location.href = getBase() + '/home';
+        }
+    } catch {
+        window.location.href = getBase() + '/login';
+    }
+}
+
 async function lastPrompt(nokkel) {
     try {
         const res = await api(`api/admin/prompt/${nokkel}`);
@@ -78,7 +94,7 @@ function renderVersjonar(versjonar, aktivId) {
 
 async function sjåVersjon(id) {
     try {
-        const res = await api(`api/admin/prompt/versjon/${id}`);
+        const res = await api(`api/admin/prompt/id/${id}`);
         if (!res.ok) throw new Error();
         const v = await res.json();
 
@@ -264,5 +280,6 @@ function lukkTestModal() {
 }
 
 // Init
+sjekkAdmin();
 document.getElementById('brukarnamn').textContent = localStorage.getItem('brukarnavn') || '';
 lastPrompt(aktivNokkel);

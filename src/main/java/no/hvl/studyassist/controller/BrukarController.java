@@ -59,7 +59,7 @@ public class BrukarController {
             return ResponseEntity.ok(Map.of(
                     "id", brukar.getId(),
                     "email", brukar.getEmail(),
-                    "rolle", brukar.getRolle() != null ? brukar.getRolle() : "STUDENT"
+                    "rolle", brukar.getRolle() != null ? brukar.getRolle() : "VANLIG"
             ));
         } else {
             return ResponseEntity.status(401).body("Feil email eller passord.");
@@ -78,7 +78,7 @@ public class BrukarController {
         return ResponseEntity.ok(Map.of(
                 "id", brukar.getId(),
                 "email", brukar.getEmail(),
-                "rolle", brukar.getRolle() != null ? brukar.getRolle() : "STUDENT"
+                "rolle", brukar.getRolle() != null ? brukar.getRolle() : "VANLIG"
         ));
     }
 

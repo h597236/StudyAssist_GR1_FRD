@@ -29,6 +29,7 @@ async function api(path, options = {}) {
     if (response.status === 401 && !isAuthEndpoint) {
         localStorage.removeItem("brukarnavn");
         localStorage.removeItem("brukarId");
+        localStorage.removeItem("rolle");
         window.location.href = getBase() + "/login";
         throw new Error("Unauthorized");
     }
@@ -36,22 +37,24 @@ async function api(path, options = {}) {
     return response;
 }
 
-function requireLogin() {
+function requireVanlig() {
     if (!localStorage.getItem("brukarId")) {
         window.location.href = getBase() + "/login";
+        return;
+    }
+    if (localStorage.getItem("rolle")?.toUpperCase() === "ADMIN") {
+        window.location.href = getBase() + "/admin";
     }
 }
 
 async function loggUt() {
     try {
-        await api("api/brukar/loggut", {
-            method: "POST"
-        });
-    } catch (error) {
-    }
+        await api("api/brukar/loggut", { method: "POST" });
+    } catch (error) {}
 
     localStorage.removeItem("brukarnavn");
     localStorage.removeItem("brukarId");
+    localStorage.removeItem("rolle");
     window.location.href = getBase() + "/login";
 }
 

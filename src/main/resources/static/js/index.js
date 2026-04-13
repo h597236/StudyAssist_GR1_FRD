@@ -1,4 +1,4 @@
-requireLogin();
+requireVanlig();
 
 // ── Display username ──
 const brukarnavn = localStorage.getItem("brukarnavn") || "bruker";

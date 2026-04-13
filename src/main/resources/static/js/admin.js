@@ -58,12 +58,12 @@ function visBrukarar(brukarar) {
         <tr>
             <td>${escHtml(b.email)}</td>
             <td>
-                <span class="rolle-badge ${b.rolle?.toUpperCase() === 'ADMIN' ? 'rolle-admin' : 'rolle-student'}">
-                    ${escHtml(b.rolle || 'STUDENT')}
+                <span class="rolle-badge ${b.rolle?.toUpperCase() === 'ADMIN' ? 'rolle-admin' : 'rolle-vanlig'}">
+                    ${escHtml(b.rolle || 'VANLIG')}
                 </span>
             </td>
             <td>
-                <button class="btn btn-secondary btn-xs" onclick="opneModal(${b.id}, '${escHtml(b.rolle || 'STUDENT')}')">Endre rolle</button>
+                <button class="btn btn-secondary btn-xs" onclick="opneModal(${b.id}, '${escHtml(b.rolle || 'VANLIG')}')">Endre rolle</button>
                 <button class="btn btn-danger btn-xs" onclick="slettBrukar(${b.id}, '${escHtml(b.email)}')">Slett</button>
             </td>
         </tr>

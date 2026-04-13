@@ -5,7 +5,7 @@ const MIN_SVAR_LENGDE = 10;
 let isWaitingForReflection = false;
 let selectedRating = 0;
 
-requireLogin();
+requireVanlig();
 
 const params = new URLSearchParams(window.location.search);
 const isTempChat = params.get("temp") === "true";

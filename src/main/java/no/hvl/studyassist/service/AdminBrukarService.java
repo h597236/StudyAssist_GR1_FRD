@@ -36,7 +36,7 @@ public class AdminBrukarService {
             Map<String, Object> dto = new HashMap<>();
             dto.put("id", b.getId());
             dto.put("email", b.getEmail());
-            dto.put("rolle", b.getRolle() != null ? b.getRolle() : "STUDENT");
+            dto.put("rolle", b.getRolle() != null ? b.getRolle() : "VANLIG");
             return dto;
         }).collect(Collectors.toList());
     }
