@@ -14,4 +14,5 @@ public class Brukar {
 
     private String email;
     private String passord;
+    private String rolle;
 }

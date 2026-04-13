@@ -30,4 +30,8 @@ public class PageController {
     public String historikk() {
         return "forward:/historikk.html";
     }
+
+    @GetMapping("/admin-prompt")
+    public String adminPrompt() { return "forward:/AdminPrompt.html";
+    }
 }
