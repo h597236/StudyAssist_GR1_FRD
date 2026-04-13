@@ -20,7 +20,6 @@ public class OpenAIService {
 
     public AIResponse askAI(AIRequest request) {
         try {
-
             OpenAIClient client = OpenAIOkHttpClient.builder()
                     .apiKey(apiKey)
                     .build();
@@ -82,11 +81,40 @@ public class OpenAIService {
 
         } catch (Exception e) {
             e.printStackTrace();
-
             AIResponse error = new AIResponse();
             error.setExplanation("Feil ved AI-kall");
             error.setFollow_up_question("Prøv igjen seinare");
             return error;
+        }
+    }
+
+    // Rå tekst-svar utan JSON-format — brukt for læringsmål-ekstraksjon
+    public String askRaw(String instructions, String input) {
+        try {
+            OpenAIClient client = OpenAIOkHttpClient.builder()
+                    .apiKey(apiKey)
+                    .build();
+
+            ResponseCreateParams params = ResponseCreateParams.builder()
+                    .model("gpt-5.2")
+                    .instructions(instructions)
+                    .input(input)
+                    .build();
+
+            Response response = client.responses().create(params);
+
+            String text = response.output().stream()
+                    .filter(ResponseOutputItem::isMessage)
+                    .flatMap(item -> item.asMessage().content().stream())
+                    .filter(ResponseOutputMessage.Content::isOutputText)
+                    .map(content -> content.asOutputText().text())
+                    .collect(java.util.stream.Collectors.joining());
+
+            return text.isBlank() ? null : text;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

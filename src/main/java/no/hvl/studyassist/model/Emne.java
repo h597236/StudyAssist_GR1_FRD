@@ -5,7 +5,6 @@ import lombok.Data;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
-
 @Entity
 @Table(name = "emne")
 @Data
@@ -17,6 +16,12 @@ public class Emne {
 
     private String namn;
     private String beskrivelse;
+
+    @Column(columnDefinition = "TEXT")
+    private String laeringsurl;
+
+    @Column(columnDefinition = "TEXT")
+    private String laeringsmaal;
 
     @ManyToOne
     @JoinColumn(name = "brukar_id")

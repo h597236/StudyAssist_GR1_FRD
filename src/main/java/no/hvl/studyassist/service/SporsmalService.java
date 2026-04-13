@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class SporsmalService {
@@ -33,6 +35,7 @@ public class SporsmalService {
     private static final String FALLBACK_OPPFOLGINGSSPORSMAL =
             "Du er ein hjelpsam lærar. Pass på at du brukar avsnitt slik at der er meir lesbart. " +
                     "Brukaren har stilt dette spørsmålet: \"{{sporsmal}}\". " +
+                    "{{laeringsmaal}}" +
                     "Ikkje gi svar eller forklaring. " +
                     "Still EITT sokratisk oppfølgingsspørsmål som hjelper brukaren å reflektere og vise kva dei allereie kan om temaet. " +
                     "Spørsmålet skal vere ope og krevje forklaring, ikkje ja/nei.";
@@ -42,6 +45,7 @@ public class SporsmalService {
                     "Originalt spørsmål: \"{{sporsmal}}\". " +
                     "Oppfølgingsspørsmål: \"{{oppfolgingssporsmal}}\". " +
                     "Brukarens svar: \"{{svar}}\". " +
+                    "{{laeringsmaal}}" +
                     "Gi ei kort, konkret og konstruktiv vurdering. " +
                     "Sei kva som er bra og kva som kan forbedrast. " +
                     "Avslutt med: RATING: X (1-5), der 5 er svært bra.";
@@ -49,12 +53,18 @@ public class SporsmalService {
     private static final String FALLBACK_FASIT =
             "Du er ein faglærar. Pass på at du brukar avsnitt slik at der er meir lesbart. " +
                     "Brukaren stilte dette originale spørsmålet: \"{{sporsmal}}\". " +
+                    "{{laeringsmaal}}" +
                     "Gi eit klart, korrekt og pedagogisk svar på dette spørsmålet.";
 
     private String hentPrompt(String nokkel, String fallback) {
         return adminPromptService.getAktivPrompt(nokkel)
                 .map(AdminPrompt::getInnhald)
                 .orElse(fallback);
+    }
+
+    private String lagLæringsmålTekst(String laeringsmaal) {
+        if (laeringsmaal == null || laeringsmaal.isBlank()) return "";
+        return "Relevante læringsmål for emnet: " + laeringsmaal + ". ";
     }
 
     public Map<String, Object> startSession(int brukarId, int temaId, String sporsmal) {
@@ -69,14 +79,19 @@ public class SporsmalService {
         session.setState(SporsmalSession.SessionState.INITIAL);
         sporsmalRepository.save(session);
 
+        Emne emne = tema.getEmne();
+        String emneNamn = emne != null ? emne.getNamn() : "";
+        String laeringsmaal = emne != null ? emne.getLaeringsmaal() : null;
+
         String promptMal = hentPrompt("oppfolgingssporsmal", FALLBACK_OPPFOLGINGSSPORSMAL);
         String promptTekst = promptMal
                 .replace("{{sporsmal}}", sporsmal)
-                .replace("{{emne}}", tema.getEmne() != null ? tema.getEmne().getNamn() : "")
-                .replace("{{tema}}", tema.getNamn());
+                .replace("{{emne}}", emneNamn)
+                .replace("{{tema}}", tema.getNamn())
+                .replace("{{laeringsmaal}}", lagLæringsmålTekst(laeringsmaal));
 
         AIRequest request = new AIRequest();
-        request.setSubject(tema.getEmne() != null ? tema.getEmne().getNamn() : "");
+        request.setSubject(emneNamn);
         request.setTopic(tema.getNamn());
         request.setQuestion(promptTekst);
 
@@ -96,7 +111,9 @@ public class SporsmalService {
         SporsmalSession session = sporsmalRepository.findById(sessionId).orElseThrow();
 
         Tema tema = session.getTema();
-        String emneNamn = tema.getEmne() != null ? tema.getEmne().getNamn() : "";
+        Emne emne = tema.getEmne();
+        String emneNamn = emne != null ? emne.getNamn() : "";
+        String laeringsmaal = emne != null ? emne.getLaeringsmaal() : null;
 
         String vurderingMal = hentPrompt("vurdering", FALLBACK_VURDERING);
         String vurderingTekst = vurderingMal
@@ -104,7 +121,8 @@ public class SporsmalService {
                 .replace("{{oppfolgingssporsmal}}", session.getOppfolgingsSporsmal())
                 .replace("{{svar}}", svar)
                 .replace("{{emne}}", emneNamn)
-                .replace("{{tema}}", tema.getNamn());
+                .replace("{{tema}}", tema.getNamn())
+                .replace("{{laeringsmaal}}", lagLæringsmålTekst(laeringsmaal));
 
         AIRequest vurderingRequest = new AIRequest();
         vurderingRequest.setSubject(emneNamn);
@@ -120,7 +138,8 @@ public class SporsmalService {
         String fasitTekst = fasitMal
                 .replace("{{sporsmal}}", session.getStartSporsmal())
                 .replace("{{emne}}", emneNamn)
-                .replace("{{tema}}", tema.getNamn());
+                .replace("{{tema}}", tema.getNamn())
+                .replace("{{laeringsmaal}}", lagLæringsmålTekst(laeringsmaal));
 
         AIRequest fasitRequest = new AIRequest();
         fasitRequest.setSubject(emneNamn);
@@ -152,9 +171,7 @@ public class SporsmalService {
 
     private Integer extractRating(String text) {
         if (text == null) return null;
-        java.util.regex.Matcher match = java.util.regex.Pattern
-                .compile("RATING:\\s*(\\d)")
-                .matcher(text);
+        Matcher match = Pattern.compile("RATING:\\s*(\\d)").matcher(text);
         if (match.find()) {
             int rating = Integer.parseInt(match.group(1));
             if (rating >= 1 && rating <= 5) return rating;
