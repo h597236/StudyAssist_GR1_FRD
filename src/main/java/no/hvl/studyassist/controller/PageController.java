@@ -32,12 +32,8 @@ public class PageController {
     }
 
     @GetMapping("/admin")
-    public String admin() {
-        return "forward:/admin.html";
-    }
+    public String admin() { return "forward:/AdminBrukar.html"; }
 
     @GetMapping("/admin-prompt")
-    public String adminPrompt() {
-        return "forward:/AdminPrompt.html";
-    }
+    public String adminPrompt() { return "forward:/AdminPrompt.html"; }
 }
