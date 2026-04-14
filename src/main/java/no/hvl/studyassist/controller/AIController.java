@@ -33,4 +33,9 @@ public class AIController {
         AIResponse response = openAIService.askAI(request);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/models")
+    public ResponseEntity<?> getModels() {
+        return ResponseEntity.ok(openAIService.getAvailableModels());
+    }
 }

@@ -225,8 +225,9 @@ async function sendQuestion() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    question: question
-                })
+                    question: question,
+                    model: document.getElementById("modelSelect").value
+            })
             });
 
             const data = await res.json();
@@ -260,6 +261,8 @@ async function sendQuestion() {
         }
 
         const temaId = parseInt(temaIdRaw);
+
+        const model = document.getElementById("modelSelect").value;
 
         const res = await api("api/sporsmal/start", {
             method: "POST",
