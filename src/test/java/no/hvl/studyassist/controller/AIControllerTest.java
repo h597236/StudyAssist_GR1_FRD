@@ -5,7 +5,7 @@ import no.hvl.studyassist.model.AIRequest;
 import no.hvl.studyassist.model.AIResponse;
 import no.hvl.studyassist.model.Brukar;
 import no.hvl.studyassist.service.BrukarService;
-import no.hvl.studyassist.service.OpenAIService;
+import no.hvl.studyassist.service.ai.AiModelService;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ class AIControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private OpenAIService openAIService;
+    private AiModelService aiModelService;
 
     @MockBean
     private BrukarService brukarService;
@@ -51,7 +51,7 @@ class AIControllerTest {
         response.setExplanation("Test forklaring");
         response.setFollow_up_question("Test spørsmål");
 
-        when(openAIService.askAI(any()))
+        when(aiModelService.askAI(any()))
                 .thenReturn(response);
 
         // Request (Riktig felt!)

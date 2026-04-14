@@ -4,6 +4,7 @@ import no.hvl.studyassist.model.*;
 import no.hvl.studyassist.repository.BrukarRepository;
 import no.hvl.studyassist.repository.SporsmalRepository;
 import no.hvl.studyassist.repository.TemaRepository;
+import no.hvl.studyassist.service.ai.AiModelService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,18 +16,18 @@ import java.util.regex.Pattern;
 public class SporsmalService {
 
     private final SporsmalRepository sporsmalRepository;
-    private final OpenAIService openAIService;
+    private final AiModelService aiModelService;
     private final TemaRepository temaRepository;
     private final BrukarRepository brukarRepository;
     private final AdminPromptService adminPromptService;
 
     public SporsmalService(SporsmalRepository sporsmalRepository,
-                           OpenAIService openAIService,
+                           AiModelService aiModelService,
                            TemaRepository temaRepository,
                            BrukarRepository brukarRepository,
                            AdminPromptService adminPromptService) {
         this.sporsmalRepository = sporsmalRepository;
-        this.openAIService = openAIService;
+        this.aiModelService = aiModelService;
         this.temaRepository = temaRepository;
         this.brukarRepository = brukarRepository;
         this.adminPromptService = adminPromptService;
@@ -95,7 +96,7 @@ public class SporsmalService {
         request.setTopic(tema.getNamn());
         request.setQuestion(promptTekst);
 
-        AIResponse aiResponse = openAIService.askAI(request);
+        AIResponse aiResponse = aiModelService.askAI(request);
 
         session.setOppfolgingsSporsmal(aiResponse.getFollow_up_question());
         session.setState(SporsmalSession.SessionState.FOLLOW_UP);
@@ -129,7 +130,7 @@ public class SporsmalService {
         vurderingRequest.setTopic(tema.getNamn());
         vurderingRequest.setQuestion(vurderingTekst);
 
-        AIResponse vurderingResponse = openAIService.askAI(vurderingRequest);
+        AIResponse vurderingResponse = aiModelService.askAI(vurderingRequest);
         String vurdering = vurderingResponse.getExplanation();
         Integer rating = extractRating(vurdering);
         session.setRating(rating);
@@ -146,7 +147,7 @@ public class SporsmalService {
         fasitRequest.setTopic(tema.getNamn());
         fasitRequest.setQuestion(fasitTekst);
 
-        AIResponse fasitResponse = openAIService.askAI(fasitRequest);
+        AIResponse fasitResponse = aiModelService.askAI(fasitRequest);
         String fasit = fasitResponse.getExplanation();
 
         session.setBrukarRefleksjon(svar);

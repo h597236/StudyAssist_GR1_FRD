@@ -7,6 +7,7 @@ import no.hvl.studyassist.repository.BrukarRepository;
 import no.hvl.studyassist.repository.EmneRepository;
 import no.hvl.studyassist.repository.SporsmalRepository;
 import no.hvl.studyassist.repository.TemaRepository;
+import no.hvl.studyassist.service.ai.AiModelService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,18 +20,18 @@ public class EmneService {
     private final BrukarRepository brukarRepository;
     private final TemaRepository temaRepository;
     private final SporsmalRepository sporsmalRepository;
-    private final OpenAIService openAIService;
+    private final AiModelService aiModelService;
 
     public EmneService(EmneRepository emneRepository,
                        BrukarRepository brukarRepository,
                        TemaRepository temaRepository,
                        SporsmalRepository sporsmalRepository,
-                       OpenAIService openAIService) {
+                       AiModelService aiModelService) {
         this.emneRepository = emneRepository;
         this.brukarRepository = brukarRepository;
         this.temaRepository = temaRepository;
         this.sporsmalRepository = sporsmalRepository;
-        this.openAIService = openAIService;
+        this.aiModelService = aiModelService;
     }
 
     public Emne save(Emne emne) {
@@ -49,7 +50,7 @@ public class EmneService {
             String raaTekst = hentTekstFraUrl(url);
             if (raaTekst != null) {
                 // Send til AI for å trekke ut læringsmål
-                String laeringsmaal = openAIService.askRaw(
+                String laeringsmaal = aiModelService.askRaw(
                         "Du er ein assistent som trekk ut læringsmål frå nettsider. " +
                                 "Returner BERRE ein kortfatta punktliste med læringsmåla. " +
                                 "Ikkje inkluder noko anna tekst. " +

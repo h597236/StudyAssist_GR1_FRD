@@ -2,6 +2,7 @@ package no.hvl.studyassist.service;
 
 import no.hvl.studyassist.model.*;
 import no.hvl.studyassist.repository.*;
+import no.hvl.studyassist.service.ai.AiModelService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -25,7 +26,10 @@ class SporsmalServiceTest {
     private BrukarRepository brukarRepository;
 
     @Mock
-    private OpenAIService openAIService;
+    private AiModelService aiModelService;
+
+    @Mock
+    private AdminPromptService adminPromptService;
 
     @InjectMocks
     private SporsmalService sporsmalService;
@@ -37,9 +41,9 @@ class SporsmalServiceTest {
 
     @Test
     void startSession_skalOppretteSession() {
-        // Arrange
         Tema tema = new Tema();
         tema.setTemaId(1);
+        tema.setNamn("Scrum");  // ← fiksa
 
         Emne emne = new Emne();
         emne.setNamn("DAT109");
@@ -58,10 +62,12 @@ class SporsmalServiceTest {
         aiResponse.setExplanation("Forklaring");
         aiResponse.setFollow_up_question("Oppfølgingsspørsmål?");
 
-        when(openAIService.askAI(any()))
+        when(aiModelService.askAI(any()))
                 .thenReturn(aiResponse);
 
-        // 🔥 KRITISK FIX: sett sessionId manuelt når save() blir kalla
+        when(adminPromptService.getAktivPrompt(any()))
+                .thenReturn(Optional.empty());
+
         when(sporsmalRepository.save(any()))
                 .thenAnswer(invocation -> {
                     SporsmalSession s = invocation.getArgument(0);
@@ -69,10 +75,8 @@ class SporsmalServiceTest {
                     return s;
                 });
 
-        // Act
         var response = sporsmalService.startSession(1, 1, "Hva er Scrum?");
 
-        // Assert
         assertNotNull(response);
         assertNotNull(response.get("sessionId"));
         assertNotNull(response.get("oppfolgingsSporsmal"));
@@ -80,7 +84,6 @@ class SporsmalServiceTest {
 
     @Test
     void handleRefleksjon_skalReturnereVurderingOgFasit() {
-        // Arrange
         Tema tema = new Tema();
         tema.setTemaId(1);
         tema.setNamn("Scrum");
@@ -98,20 +101,21 @@ class SporsmalServiceTest {
         when(sporsmalRepository.findById(1L))
                 .thenReturn(Optional.of(session));
 
+        when(adminPromptService.getAktivPrompt(any()))
+                .thenReturn(Optional.empty());
+
         AIResponse vurderingResponse = new AIResponse();
         vurderingResponse.setExplanation("Bra svar. RATING: 4");
 
         AIResponse fasitResponse = new AIResponse();
         fasitResponse.setExplanation("Scrum er en smidig metode...");
 
-        when(openAIService.askAI(any()))
+        when(aiModelService.askAI(any()))
                 .thenReturn(vurderingResponse)
                 .thenReturn(fasitResponse);
 
-        // Act
         var response = sporsmalService.handleRefleksjon(1L, "Mitt svar");
 
-        // Assert
         assertNotNull(response);
         assertEquals("Bra svar.", response.get("vurdering"));
         assertEquals(4, response.get("rating"));

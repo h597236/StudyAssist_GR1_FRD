@@ -1,19 +1,17 @@
-package no.hvl.studyassist.service;
+package no.hvl.studyassist.service.ai;
 
 import no.hvl.studyassist.model.AIRequest;
 import no.hvl.studyassist.model.AIResponse;
-import no.hvl.studyassist.service.ai.AiModelClient;
-import no.hvl.studyassist.service.ai.AiModelResolver;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class OpenAIService {
+public class AiModelService {
 
     private final AiModelResolver modelResolver;
 
-    public OpenAIService(AiModelResolver modelResolver) {
+    public AiModelService(AiModelResolver modelResolver) {
         this.modelResolver = modelResolver;
     }
 
