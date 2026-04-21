@@ -147,7 +147,7 @@ function truncate(text, maxLen) {
 
 // ── Modal ──
 function openHistorikkModal(item) {
-    var isPagaande = item.state === "INITIAL" || item.state === "FOLLOW_UP";
+    var isPagaande = item.state === "INITIAL" || item.state === "FOLLOW_UP" || item.state === "NEEDS_FOLLOWUP";
 
     // Viss pågåande — send direkte til spørsmålssida
     if (isPagaande) {

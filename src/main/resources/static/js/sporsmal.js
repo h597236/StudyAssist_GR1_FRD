@@ -32,15 +32,32 @@ async function gjenopprettSession(sessionId) {
         // Vis det originale spørsmålet
         addUserMessage(data.startSporsmal);
 
-        // Vis oppfølgingsspørsmålet frå KI
-        if (data.oppfolgingsSporsmal) {
-            addAIMessage("🤔 Oppfølgingsspørsmål:\n" + data.oppfolgingsSporsmal);
-        }
-
-        // Viss state er FOLLOW_UP ventar vi på refleksjon frå brukar
         if (data.state === "FOLLOW_UP" || data.state === "INITIAL") {
+            // Første runde — berre vis oppfølgingsspørsmål
+            if (data.oppfolgingsSporsmal) {
+                addAIMessage("🤔 Oppfølgingsspørsmål:\n" + data.oppfolgingsSporsmal);
+            }
             isWaitingForReflection = true;
             addAIMessage("💬 Du har ein uferdig chat her. Skriv svaret ditt under for å halde fram.");
+
+        } else if (data.state === "NEEDS_FOLLOWUP") {
+            // Har allereie svart ein gong — vis heile historia
+            if (data.oppfolgingsSporsmal) {
+                addAIMessage("🤔 Oppfølgingsspørsmål:\n" + data.oppfolgingsSporsmal);
+            }
+            if (data.brukarRefleksjon) {
+                addUserMessage(data.brukarRefleksjon);
+            }
+            if (data.vurdering) {
+                addAIMessage("✅ " + data.vurdering);
+            }
+            if (data.rating) {
+                addAIMessageHTML("Din score: " + renderStars(data.rating));
+            }
+            // Vis det nye oppfølgingsspørsmålet som ventar på svar
+            // oppfolgingsSporsmal er no oppdatert til det nye spørsmålet
+            addAIMessage("💬 Prøv igjen! Du har eit nytt spørsmål som ventar på svar.");
+            isWaitingForReflection = true;
         }
 
     } catch (err) {
@@ -167,6 +184,16 @@ async function sendQuestion() {
     const question = input.value.trim();
     if (!question) return;
 
+    if (isWaitingForReflection && question === "/demo") {
+        addUserMessage(question);
+        input.value = "";
+        btn.disabled = true;
+        addThinkingMessage();
+        await hoppTilFasit();
+        btn.disabled = false;
+        return;
+    }
+
     if (isWaitingForReflection && question.length < MIN_SVAR_LENGDE) {
         addAIMessage(`❌ Du må skrive minst ${MIN_SVAR_LENGDE} teikn.`);
         return;
@@ -180,6 +207,7 @@ async function sendQuestion() {
     addThinkingMessage();
 
     if (isWaitingForReflection) {
+
         try {
             const res = await api("api/sporsmal/refleksjon", {
                 method: "POST",
@@ -201,14 +229,22 @@ async function sendQuestion() {
                 addAIMessageHTML("Din score: " + renderStars(data.rating));
             }
 
-            if (data.fasit) {
-                addAIMessage("📖 " + data.fasit);
+            // Nytt oppfølgingsspørsmål viss rating < 4
+            if (data.needsFollowup) {
+                addAIMessage("💬 Prøv igjen! " + data.oppfolgingsSporsmal);
+                isWaitingForReflection = true;
+
+            } else {
+                // Rating >= 4 → vis fasit
+                if (data.fasit) {
+                    addAIMessage("📖 " + data.fasit);
+                }
+
+                showEndChatUI();
+
+                currentSessionId = null;
+                isWaitingForReflection = false;
             }
-
-            showUserRatingUI();
-
-            currentSessionId = null;
-            isWaitingForReflection = false;
 
         } catch (err) {
             console.error("ERROR:", err);
@@ -562,6 +598,32 @@ function showEndChatUI() {
 
     currentSessionId = null;
     isWaitingForReflection = false;
+
+    scrollToBottom();
+}
+
+async function hoppTilFasit() {
+    try {
+        const res = await api("api/sporsmal/fasit-direkte", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: currentSessionId })
+        });
+
+        const data = await res.json();
+        removeThinkingMessage();
+
+        if (data.fasit) addAIMessage("📖 " + data.fasit);
+
+        showUserRatingUI();
+
+        currentSessionId = null;
+        isWaitingForReflection = false;
+
+    } catch (err) {
+        removeThinkingMessage();
+        addAIMessage("❌ Feil oppstod.");
+    }
 
     scrollToBottom();
 }

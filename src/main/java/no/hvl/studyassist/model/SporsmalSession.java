@@ -48,6 +48,7 @@ public class SporsmalSession {
     public enum SessionState {
         INITIAL,
         FOLLOW_UP,
+        NEEDS_FOLLOWUP,
         FINAL_ANSWER,
         COMPLETED
     }

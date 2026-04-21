@@ -133,7 +133,96 @@ public class SporsmalService {
         AIResponse vurderingResponse = aiModelService.askAI(vurderingRequest);
         String vurdering = vurderingResponse.getExplanation();
         Integer rating = extractRating(vurdering);
+        String cleanText = vurdering.replaceAll("RATING:\\s*\\d", "").trim();
+
+        session.setBrukarRefleksjon(svar);
+        session.setVurdering(cleanText);
         session.setRating(rating);
+
+        // Rating < 4 → nytt oppfølgingsspørsmål
+        if (rating != null && rating < 4) {
+            String nyOppfolgingMal = hentPrompt("oppfolgingssporsmal", FALLBACK_OPPFOLGINGSSPORSMAL);
+            String nyOppfolgingTekst = nyOppfolgingMal
+                    .replace("{{sporsmal}}", session.getStartSporsmal())
+                    .replace("{{emne}}", emneNamn)
+                    .replace("{{tema}}", tema.getNamn())
+                    .replace("{{laeringsmaal}}", lagLæringsmålTekst(laeringsmaal));
+
+            AIRequest nyOppfolgingRequest = new AIRequest();
+            nyOppfolgingRequest.setSubject(emneNamn);
+            nyOppfolgingRequest.setTopic(tema.getNamn());
+            nyOppfolgingRequest.setQuestion(nyOppfolgingTekst);
+
+            AIResponse nyOppfolgingResponse = aiModelService.askAI(nyOppfolgingRequest);
+            session.setOppfolgingsSporsmal(nyOppfolgingResponse.getFollow_up_question());
+            session.setState(SporsmalSession.SessionState.NEEDS_FOLLOWUP);
+            sporsmalRepository.save(session);
+
+            return Map.of(
+                    "vurdering", cleanText,
+                    "rating", rating,
+                    "needsFollowup", true,
+                    "oppfolgingsSporsmal", nyOppfolgingResponse.getFollow_up_question() != null
+                            ? nyOppfolgingResponse.getFollow_up_question() : ""
+            );
+        }
+
+        // Rating >= 4 → fasit
+        String fasitMal = hentPrompt("fasit", FALLBACK_FASIT);
+        String fasitTekst = fasitMal
+                .replace("{{sporsmal}}", session.getStartSporsmal())
+                .replace("{{emne}}", emneNamn)
+                .replace("{{tema}}", tema.getNamn())
+                .replace("{{laeringsmaal}}", lagLæringsmålTekst(laeringsmaal));
+
+        AIRequest fasitRequest = new AIRequest();
+        fasitRequest.setSubject(emneNamn);
+        fasitRequest.setTopic(tema.getNamn());
+        fasitRequest.setQuestion(fasitTekst);
+
+        AIResponse fasitResponse = aiModelService.askAI(fasitRequest);
+        String fasit = fasitResponse.getExplanation();
+
+        session.setFasitSvar(fasit);
+        session.setState(SporsmalSession.SessionState.FINAL_ANSWER);
+        sporsmalRepository.save(session);
+
+        return Map.of(
+                "vurdering", cleanText,
+                "rating", rating != null ? rating : 0,
+                "needsFollowup", false,
+                "fasit", fasit != null ? fasit : ""
+        );
+    }
+
+    public void handleTilbakemelding(Long sessionId, String tekst) {
+        SporsmalSession session = sporsmalRepository.findById(sessionId).orElseThrow();
+        session.setState(SporsmalSession.SessionState.COMPLETED);
+        sporsmalRepository.save(session);
+    }
+
+    public Map<String, Object> startNyRunde(int brukarId, Long gammalSessionId, String nyttSporsmal) {
+        SporsmalSession gammal = sporsmalRepository.findById(gammalSessionId).orElseThrow();
+        return startSession(brukarId, gammal.getTema().getTemaId(), nyttSporsmal);
+    }
+
+    private Integer extractRating(String text) {
+        if (text == null) return null;
+        Matcher match = Pattern.compile("RATING:\\s*(\\d)").matcher(text);
+        if (match.find()) {
+            int rating = Integer.parseInt(match.group(1));
+            if (rating >= 1 && rating <= 5) return rating;
+        }
+        return null;
+    }
+
+    public Map<String, Object> hentFasitDirekte(Long sessionId) {
+        SporsmalSession session = sporsmalRepository.findById(sessionId).orElseThrow();
+
+        Tema tema = session.getTema();
+        Emne emne = tema.getEmne();
+        String emneNamn = emne != null ? emne.getNamn() : "";
+        String laeringsmaal = emne != null ? emne.getLaeringsmaal() : null;
 
         String fasitMal = hentPrompt("fasit", FALLBACK_FASIT);
         String fasitTekst = fasitMal
@@ -150,34 +239,11 @@ public class SporsmalService {
         AIResponse fasitResponse = aiModelService.askAI(fasitRequest);
         String fasit = fasitResponse.getExplanation();
 
-        session.setBrukarRefleksjon(svar);
-        String cleanText = vurdering.replaceAll("RATING:\\s*\\d", "").trim();
-        session.setVurdering(cleanText);
         session.setFasitSvar(fasit);
         session.setState(SporsmalSession.SessionState.FINAL_ANSWER);
         sporsmalRepository.save(session);
 
-        return Map.of(
-                "vurdering", cleanText,
-                "rating", rating,
-                "fasit", fasit != null ? fasit : ""
-        );
-    }
-
-    public void handleTilbakemelding(Long sessionId, String tekst) {
-        SporsmalSession session = sporsmalRepository.findById(sessionId).orElseThrow();
-        session.setState(SporsmalSession.SessionState.COMPLETED);
-        sporsmalRepository.save(session);
-    }
-
-    private Integer extractRating(String text) {
-        if (text == null) return null;
-        Matcher match = Pattern.compile("RATING:\\s*(\\d)").matcher(text);
-        if (match.find()) {
-            int rating = Integer.parseInt(match.group(1));
-            if (rating >= 1 && rating <= 5) return rating;
-        }
-        return null;
+        return Map.of("fasit", fasit != null ? fasit : "");
     }
 
     public long getSessionCount(int brukarId) {
