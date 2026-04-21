@@ -5,6 +5,8 @@ const MIN_SVAR_LENGDE = 10;
 let isWaitingForReflection = false;
 let selectedRating = 0;
 
+let tempChatHistorikk = [];
+
 requireVanlig();
 
 const params = new URLSearchParams(window.location.search);
@@ -221,23 +223,25 @@ async function sendQuestion() {
 
     if (isTempChat) {
         try {
-            const res = await api("api/ai/ask", {
+            tempChatHistorikk.push({ rolle: "Brukar", tekst: question });
+
+            const res = await api("api/ai/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    question: question,
-                    model: document.getElementById("modelSelect").value
-            })
+                    melding: question,
+                    historikk: tempChatHistorikk.slice(0, -1)
+                })
             });
 
             const data = await res.json();
             removeThinkingMessage();
 
-            if (data.explanation) {
-                addAIMessage(data.explanation);
-            } else {
-                addAIMessage("❌ Ingen svar frå AI.");
-            }
+            const aiSvar = data.svar || "❌ Ingen svar frå AI.";
+
+            tempChatHistorikk.push({ rolle: "AI", tekst: aiSvar });
+
+            addAIMessageMarkdown(aiSvar);
 
         } catch (err) {
             console.error(err);
@@ -506,6 +510,34 @@ function highlightStars(container, rating) {
             star.classList.remove("filled");
         }
     });
+}
+
+function addAIMessageMarkdown(text) {
+    const chat = document.getElementById("chatMessages");
+
+    const welcome = document.querySelector(".chat-welcome");
+    if (welcome) welcome.remove();
+
+    const html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+        .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+        .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.+?)\*/g, "<em>$1</em>")
+        .replace(/^- (.+)$/gm, "<li>$1</li>")
+        .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+        .replace(/\n{2,}/g, "<br><br>")
+        .replace(/\n/g, "<br>");
+
+    const div = document.createElement("div");
+    div.className = "chat-bubble chat-ai";
+    div.innerHTML = `<div class="chat-bubble-content">${html}</div>`;
+
+    chat.appendChild(div);
+    scrollToBottom();
 }
 
 function showEndChatUI() {
