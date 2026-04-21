@@ -9,29 +9,90 @@ async function loadStats() {
     try {
         const brukarId = localStorage.getItem("brukarId");
 
-        const res = await api(`emne/brukar/${brukarId}`);
-        const emner = await res.json();
-
-        document.getElementById("statEmne").textContent = emner.length;
+        const emneRes = await api(`emne/brukar/${brukarId}`);
+        const emner = await emneRes.json();
+        const antallEmne = emner.length;
 
         let totalTema = 0;
-
         for (const emne of emner) {
             const temaRes = await api(`tema/emne/${emne.emneId}`);
             const temaListe = await temaRes.json();
             totalTema += temaListe.length;
         }
 
+        const historikkRes = await api("api/historikk");
+        const historikk = await historikkRes.json();
+
+        const totaltSporsmal = historikk.length;
+        const fullforte = historikk.filter(h =>
+            h.state === "COMPLETED" || h.state === "FINAL_ANSWER"
+        ).length;
+
+        const enUkeSidan = new Date();
+        enUkeSidan.setDate(enUkeSidan.getDate() - 7);
+        const denneVeka = historikk.filter(h =>
+            new Date(h.opprettaTid) > enUkeSidan
+        ).length;
+
+        // Rekn ut streak — antal dagar på rad med minst ein session
+        const streak = regnUtStreak(historikk);
+
+        // Oppdater stat-kort
+        document.getElementById("statEmne").textContent = antallEmne;
+        document.getElementById("statEmneLabel").textContent = "aktive fag";
+
         document.getElementById("statTema").textContent = totalTema;
+        document.getElementById("statTemaLabel").innerHTML =
+            `påbegynt <span class="stat-sublabel-secondary">${fullforte} av ${totaltSporsmal} fullført</span>`;
 
-        const sporsmalRes = await api("api/sporsmal/count");
-        const sporsmalData = await sporsmalRes.json();
+        document.getElementById("statSporsmal").textContent = totaltSporsmal;
+        document.getElementById("statSporsmalLabel").innerHTML =
+            `denne veka <span class="stat-sublabel-secondary">snitt ${totaltSporsmal > 0 ? (totaltSporsmal / 7).toFixed(1) : "0"}/dag</span>`;
 
-        document.getElementById("statSporsmal").textContent = sporsmalData.count;
+        // Oppdater velkomst-ingress
+        const ingress = document.getElementById("welcomeIngress");
+        if (ingress) {
+            if (antallEmne === 0) {
+                ingress.textContent = "Kom i gang ved å opprette ditt første emne!";
+            } else {
+                ingress.innerHTML = `${antallEmne} ${antallEmne === 1 ? "emne er aktivt" : "emne er aktive"}. Fortsett der du slapp, eller still eit nytt<br>spørsmål - StudyAssist hugsar kor vi var.`;
+            }
+        }
+
+        // Vis streak viss > 0
+        if (streak > 0) {
+            document.getElementById("welcomeStreak").style.display = "flex";
+            document.getElementById("streakCircle").textContent = streak;
+            document.getElementById("streakDays").textContent = `${streak} ${streak === 1 ? "dag" : "dagar"} på rad`;
+        }
 
     } catch (error) {
         console.error("Stats error:", error);
     }
+}
+
+function regnUtStreak(historikk) {
+    if (!historikk.length) return 0;
+
+    const datoar = [...new Set(historikk.map(h => {
+        const d = new Date(h.opprettaTid);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    }))].sort().reverse();
+
+    let streak = 0;
+    const idag = new Date();
+
+    for (let i = 0; i < datoar.length; i++) {
+        const forventar = new Date(idag);
+        forventar.setDate(idag.getDate() - i);
+        const forventarStr = `${forventar.getFullYear()}-${forventar.getMonth()}-${forventar.getDate()}`;
+        if (datoar[i] === forventarStr) {
+            streak++;
+        } else {
+            break;
+        }
+    }
+    return streak;
 }
 
 // ── Add Subject ──
@@ -206,7 +267,7 @@ async function loadEmnerIndex() {
 
         card.innerHTML =
             '<div class="emne-card-top">' +
-            '<div class="emne-icon"></div>' +
+            //'<div class="emne-icon"></div>' +
             '<button class="emne-delete-btn" title="Slett emne">&times;</button>' +
             '</div>' +
             '<div class="emne-card-body">' +
