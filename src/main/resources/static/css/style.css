@@ -2133,3 +2133,34 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Stjerner (rangering) ── */
+.star {
+  font-size: 22px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--border);
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+
+.star:hover {
+  transform: scale(1.2);
+}
+
+.star.filled {
+  color: var(--accent-soft);
+}
+
+.hist-star {
+  font-size: 0.9rem;
+  color: var(--border);
+}
+
+.hist-star.filled {
+  color: var(--accent-soft);
+}
+
+.hist-rating {
+  display: flex;
+  gap: 2px;
+}
