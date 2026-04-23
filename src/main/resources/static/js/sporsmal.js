@@ -240,7 +240,7 @@ async function sendQuestion() {
                     addAIMessage("📖 " + data.fasit);
                 }
 
-                showEndChatUI();
+                showUserRatingUI();
 
                 currentSessionId = null;
                 isWaitingForReflection = false;
@@ -465,7 +465,7 @@ function addThinkingMessage() {
 
     div.innerHTML = `
         <div class="chat-bubble-content">
-            <em>⏳ AI jobbar med svaret...</em>
+            <em>⏳ KI jobbar med svaret...</em>
         </div>
     `;
 
@@ -584,7 +584,7 @@ function showEndChatUI() {
 
     div.innerHTML = `
         <div class="chat-bubble-content">
-            <p>✨ Takk for vurderinga!</p>
+            <p>✨ Takk for læringsøkta!</p>
             <button class="sp-btn">Start ny chat</button>
         </div>
     `;

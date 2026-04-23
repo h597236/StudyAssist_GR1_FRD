@@ -76,7 +76,9 @@ function regnUtStreak(historikk) {
 
     const datoar = [...new Set(historikk.map(h => {
         const d = new Date(h.opprettaTid);
-        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${d.getFullYear()}-${mm}-${dd}`;
     }))].sort().reverse();
 
     let streak = 0;
@@ -85,7 +87,9 @@ function regnUtStreak(historikk) {
     for (let i = 0; i < datoar.length; i++) {
         const forventar = new Date(idag);
         forventar.setDate(idag.getDate() - i);
-        const forventarStr = `${forventar.getFullYear()}-${forventar.getMonth()}-${forventar.getDate()}`;
+        const fmm = String(forventar.getMonth() + 1).padStart(2, '0');
+        const fdd = String(forventar.getDate()).padStart(2, '0');
+        const forventarStr = `${forventar.getFullYear()}-${fmm}-${fdd}`;
         if (datoar[i] === forventarStr) {
             streak++;
         } else {
